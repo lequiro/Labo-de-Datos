@@ -8,7 +8,7 @@ entradas = os.listdir(path)
 
 flujos = pd.read_csv(entradas[0])
 lista_secciones= pd.read_csv(entradas[1])
-# lista_sedes_datos = pd.read_csv(entradas[2], encoding = 'utf-8', sep = ',')
+lista_sedes_datos = pd.read_csv(entradas[2], on_bad_lines= 'skip')
 lista_sedes = pd.read_csv(entradas[3])
 paises = pd.read_csv(entradas[4])
 
@@ -27,22 +27,23 @@ paises_limpio = paises_limpio[['nombre',' iso2']]
 
 lista_secciones_limpio = lista_secciones.copy()
 lista_secciones_limpio = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
+
+
+lista_sedes_datos_limpio = lista_sedes_datos.copy()
+lista_sedes_datos_limpio['redes_sociales'] = lista_sedes_datos_limpio['redes_sociales'].str.split(' // ')
 #%%
 #lista sedes
 #Voy a eliminar los campos de mi tabla donde el estado sea "Inactivo"
+lista_sedes_limpio = lista_sedes.copy()
 
-for x in lista_sedes.index: 
-  if lista_sedes.loc[x, "estado"] == 'Inactivo':
-    lista_sedes.drop(x, inplace = True)
+for x in lista_sedes_limpio.index: 
+  if lista_sedes_limpio.loc[x, "estado"] == 'Inactivo':
+    lista_sedes_limpio.drop(x, inplace = True)
 
-
-print(lista_sedes.info())
 
 #Como se que son todas sedes activas, puedo eliminar la columna "estado"
 #Al mismo tiempor quiero eliminar la columna de "sede_tipo" ya que no es relevante para mi objetivo
-
-lista_sedes_limpio = lista_sedes.drop(["estado", "sede_tipo"], axis = 1)
-lista_sedes_limpio = lista_sedes_limpio[['pais_iso_2']]
+lista_sedes_limpio = lista_sedes_limpio[['sede_id','pais_iso_3','sede_tipo']]
 
 
 #%%
