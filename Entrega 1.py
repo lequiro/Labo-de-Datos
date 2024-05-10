@@ -25,7 +25,7 @@ PAISES['nombre'] = PAISES['nombre'].str.upper().replace({'Á': 'A','É': 'E','Í
 #SECCIONES
 lista_secciones_limpio = lista_secciones.copy()
 lista_secciones_limpio = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
-
+lista_secciones_limpio = lista_secciones_limpio.rename(columns = {'sede_desc_castellano':'descripcion'})
 
 #%%
 #FLUJOS MONETARIOS
@@ -170,7 +170,9 @@ lista_sedes_datos_4.loc[lista_indices_4,'tipo_red'] = ['youtube']*len(lista_indi
 #asigno a mano
 lista_sedes_datos_4.loc[4,'tipo_red'] = 'flickr'
 
-#concatenacion total
+
+
+################################## concatenacion total ##################################
 redes_sociales = concatenated_df = pd.concat([lista_sedes_datos_1, lista_sedes_datos_2, lista_sedes_datos_3, lista_sedes_datos_4], ignore_index=True)
 #%%
 ################################## SEDES ##################################
