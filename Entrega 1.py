@@ -5,6 +5,7 @@ from   matplotlib import ticker
 from matplotlib import rcParams
 from inline_sql import sql, sql_val
 import os
+import seaborn as sns  
 
 path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\datasets'
 os.chdir(path)
@@ -370,8 +371,6 @@ tablaResultado3 = sql ^ consulta11
 
 
 #%%
-
-
 '''
 IV) Confeccionar un reporte con la información de redes sociales, donde se
 indique para cada caso: el país, la sede, el tipo de red social y url utilizada.
@@ -397,28 +396,11 @@ ORDER BY p.nombre ASC;
 
 tablaResultado4 = sql^consulta
 
-
-
-
-#%%%
-
-###################################  GRAFICOS   ############################
-plt.figure(figsize=(10, 6))
-plt.bar(tablaResultado2['region_geografica'],
-        tablaResultado2.sort_values(by='Promedio IED 2002 (M U$S)', ascending=False)['Promedio IED 2002 (M U$S)'], color='skyblue')
-plt.xlabel('Region')
-plt.ylabel('Number of Embassies')
-plt.title('Number of Embassies by Region')
-plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
-plt.tight_layout()
-plt.show()
-
-
 #%%
 ###################################  GRAFICOS   ############################
 plt.figure(figsize=(10, 6))
 plt.bar(tablaResultado2['region_geografica'],
-        tablaResultado2.sort_values(by='Promedio IED 2002 (M U$S)', ascending=False)['Promedio IED 2002 (M U$S)'], color='skyblue')
+        tablaResultado2['paises con sedes argentinas'], color='skyblue')
 plt.xlabel('Region')
 plt.ylabel('Number of Embassies')
 plt.title('Number of Embassies by Region')
@@ -460,6 +442,20 @@ plt.title('Investment vs Number of Embassies by Country')
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+#%% 
+
+#violinplot
+tabla_curada = tablaResultado1[~tablaResultado1['IED_2022'].isna()]
+
+ax = sns.violinplot(x ='sedes', y ='IED_2022', data = tabla_curada)
+
+ax.set_title('Propinas')
+ax.set_xlabel('sexo')
+ax.set_ylabel('Valor de Propina ($)')
+ax.yaxis.set_major_formatter(ticker.StrMethodFormatter("$ {x:,.2f}")); # Agrega separador de decimales y signo $
+ax.set_ylim(0,12)
+ax.set_xticklabels(['Femenino','Masculino'])   
 
 
 
