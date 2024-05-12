@@ -4,22 +4,6 @@ from inline_sql import sql, sql_val
 import os
 path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\datasets'
 os.chdir(path)
-
-#%%
-def process_redes_sociales(lista,posicion, patrones, asignaciones):
-    lista_sedes_datos_temp = lista[['sede_id','redes_sociales']]
-    lista_sedes_datos_temp.loc[:,'redes_sociales'] = lista_sedes_datos_temp['redes_sociales'].str.split(' // ').str[posicion]
-    lista_sedes_datos_temp = lista_sedes_datos_temp.dropna().reset_index(drop=True)
-    lista_sedes_datos_temp = lista_sedes_datos_temp[~(lista_sedes_datos_temp['redes_sociales'] == ' ')].reset_index(drop=True)
-    lista_sedes_datos_temp.loc[:,'tipo_red'] = np.zeros(len(lista_sedes_datos_temp), dtype='object')
-
-    for i, patron in enumerate(patrones):
-        lista_indices = np.where(lista_sedes_datos_temp['redes_sociales'].str.contains(patron, case=False))[0]
-        lista_sedes_datos_temp.loc[lista_indices, 'tipo_red'] = [asignaciones[i]] * len(lista_indices)
-
-    return lista_sedes_datos_temp
-
-
 #%%
 entradas = os.listdir(path)
 
@@ -29,8 +13,6 @@ lista_sedes_datos = pd.read_csv(entradas[2], on_bad_lines= 'skip')
 lista_sedes = pd.read_csv(entradas[3])
 paises = pd.read_csv(entradas[4])
 
-
-
 #%%
 #PAISES
 
@@ -39,10 +21,11 @@ PAISES = PAISES[['nombre',' iso3']]
 PAISES = PAISES.rename(columns ={' iso3': 'iso3'})
 PAISES['nombre'] = PAISES['nombre'].str.upper().replace({'Á': 'A','É': 'E','Í': 'I','Ó': 'O','Ú': 'U', 'Ô': 'O', 'Å':'A', '-': ' '}, regex = True)
 
+
 #SECCIONES
-SECCIONES = lista_secciones.copy()
-SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
-SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
+lista_secciones_limpio = lista_secciones.copy()
+lista_secciones_limpio = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
+lista_secciones_limpio = lista_secciones_limpio.rename(columns = {'sede_desc_castellano':'descripcion'})
 
 REGION = (lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]).unique()
 REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
@@ -96,12 +79,12 @@ flujos_nuevo = pd.merge(flujos_nuevo, PAISES, how='inner')
 ####################### CREACION FLUJOS MONETARIOS ###########################
 cols_flujos =flujos_nuevo.columns[1:]
 cols_flujos_fechas = cols_flujos.str.extract('(\d+)-')
-FLUJOS_MONETARIOS = pd.DataFrame()
+flujos_monetarios = pd.DataFrame()
 for (index,i) in enumerate(cols_flujos):
     x= flujos_nuevo[['iso3',i]].copy()
-    x.loc[:, 'fecha'] = cols_flujos_fechas.iloc[index][0]
+    x.loc[:, 'Fecha'] = cols_flujos_fechas.iloc[index][0]
     x = x.rename(columns={i : 'monto'}) 
-    FLUJOS_MONETARIOS = pd.concat([FLUJOS_MONETARIOS, x])
+    flujos_monetarios = pd.concat([flujos_monetarios, x])
 
 #%%
 ###################################  REDES SOCIALES   ############################
@@ -109,38 +92,91 @@ lista_sedes_datos_extrac = lista_sedes_datos.copy()
 
 
 ############### Posicion 1 del vector en el que se separa redes sociales ###########
-patrones_1 = ['facebook', 'twitter|@', 'instagram|cscrs2018|embajadaargentinaenjapon']
-asignaciones_1 = ['facebook', 'twitter', 'instagram']
-lista_sedes_datos_1 = process_redes_sociales(lista_sedes_datos, 0, patrones_1, asignaciones_1)
+lista_sedes_datos_1 = lista_sedes_datos_extrac[['sede_id','redes_sociales']]
+lista_sedes_datos_1.loc[:,'redes_sociales'] = lista_sedes_datos_1['redes_sociales'].str.split(' // ').str[0]
+lista_sedes_datos_1 = lista_sedes_datos_1[~(lista_sedes_datos_1['redes_sociales'].isnull())].reset_index(drop= True)
+lista_sedes_datos_1['tipo_red'] = (np.zeros(len(lista_sedes_datos_1))).astype('object')
+
+#facebook
+lista_indices_1 = np.where(lista_sedes_datos_1['redes_sociales'].str.contains('facebook', case=False))[0]
+lista_sedes_datos_1.loc[lista_indices_1,'tipo_red'] = ['facebook']*len(lista_indices_1)
+#twitter
+lista_indices_2 = np.where(lista_sedes_datos_1['redes_sociales'].str.contains('twitter|@', case=False))[0]
+lista_sedes_datos_1.loc[lista_indices_2,'tipo_red'] = ['twitter']*len(lista_indices_2)
+#instagram
+lista_indices_3 = np.where(lista_sedes_datos_1['redes_sociales'].str.contains('instagram|cscrs2018|embajadaargentinaenjapon', case=False))[0]
+lista_sedes_datos_1.loc[lista_indices_3,'tipo_red'] = ['instagram']*len(lista_indices_3)
+
+#asigno manualmente
 lista_sedes_datos_1.loc[113,'tipo_red'] = 'linkedin'
 
+
+
 ############### Posicion 2 del vector en el que se separa redes sociales ###########
-patrones_2 = ['facebook', 'twitter|@', 'instagram| argenmozambique | consuladoargentinomia | arg_trinidad_tobago ', 'youtube']
-asignaciones_2 = ['facebook', 'twitter', 'instagram', 'youtube']
-lista_sedes_datos_2 = process_redes_sociales(lista_sedes_datos, 1, patrones_2, asignaciones_2)
+lista_sedes_datos_2 = lista_sedes_datos_extrac[['sede_id','redes_sociales']]
+lista_sedes_datos_2.loc[:,'redes_sociales'] = lista_sedes_datos_2['redes_sociales'].str.split(' // ').str[1]
+lista_sedes_datos_2 = lista_sedes_datos_2[~(lista_sedes_datos_2['redes_sociales'].isnull())].reset_index(drop= True)
+lista_sedes_datos_2 = lista_sedes_datos_2[~(lista_sedes_datos_2['redes_sociales'] == ' ')].reset_index(drop= True)
+lista_sedes_datos_2['tipo_red'] = (np.zeros(len(lista_sedes_datos_2))).astype('object')
+
+#facebook
+lista_indices_1 = np.where(lista_sedes_datos_2['redes_sociales'].str.contains('facebook', case=False))[0]
+lista_sedes_datos_2.loc[lista_indices_1,'tipo_red'] = ['facebook']*len(lista_indices_1)
+#twitter
+lista_indices_2 = np.where(lista_sedes_datos_2['redes_sociales'].str.contains('twitter|@', case=False))[0]
+lista_sedes_datos_2.loc[lista_indices_2,'tipo_red'] = ['twitter']*len(lista_indices_2)
+#instagram
+lista_indices_3 = np.where(lista_sedes_datos_2['redes_sociales'].str.contains('instagram| argenmozambique | consuladoargentinomia | arg_trinidad_tobago ', case=False))[0]
+lista_sedes_datos_2.loc[lista_indices_3,'tipo_red'] = ['instagram']*len(lista_indices_3)
+#youtube
+lista_indices_4 = np.where(lista_sedes_datos_2['redes_sociales'].str.contains('youtube', case=False))[0]
+lista_sedes_datos_2.loc[lista_indices_4,'tipo_red'] = ['instagram']*len(lista_indices_4)
+#asigno a mano
 lista_sedes_datos_2.loc[34,'tipo_red'] = 'linkedin'
 
 
+
 ################# Posicion 3 del vector en el que se separa redes sociales ############
+lista_sedes_datos_3 = lista_sedes_datos_extrac[['sede_id','redes_sociales']]
+lista_sedes_datos_3.loc[:,'redes_sociales']= lista_sedes_datos_3['redes_sociales'].str.split(' // ').str[2]
+lista_sedes_datos_3 = lista_sedes_datos_3[~(lista_sedes_datos_3['redes_sociales'].isnull())].reset_index(drop= True)
+lista_sedes_datos_3 = lista_sedes_datos_3[~(lista_sedes_datos_3['redes_sociales'] == ' ')].reset_index(drop= True)
+lista_sedes_datos_3['tipo_red'] = (np.zeros(len(lista_sedes_datos_3))).astype('object')
 
-patrones_3 = ['facebook', 'twitter|@', 'instagram| argentinaencolombia | argentinaenjamaica | Embajada  Argentina  en  Honduras ', 'youtube']
-asignaciones_3 = ['facebook', 'twitter', 'instagram', 'youtube']
-lista_sedes_datos_3 = process_redes_sociales(lista_sedes_datos, 2, patrones_3, asignaciones_3)
+#facebook
+lista_indices_1 = np.where(lista_sedes_datos_3['redes_sociales'].str.contains('facebook', case=False))[0]
+lista_sedes_datos_3.loc[lista_indices_1,'tipo_red'] = ['facebook']*len(lista_indices_1)
+#twitter
+lista_indices_2 = np.where(lista_sedes_datos_3['redes_sociales'].str.contains('twitter|@', case=False))[0]
+lista_sedes_datos_3.loc[lista_indices_2,'tipo_red'] = ['twitter']*len(lista_indices_2)
+#instagram
+lista_indices_3 = np.where(lista_sedes_datos_3['redes_sociales'].str.contains('instagram| argentinaencolombia | argentinaenjamaica | Embajada  Argentina  en  Honduras ', case=False))[0]
+lista_sedes_datos_3.loc[lista_indices_3,'tipo_red'] = ['instagram']*len(lista_indices_3)
+#youtube
+lista_indices_4 = np.where(lista_sedes_datos_3['redes_sociales'].str.contains('youtube', case=False))[0]
+lista_sedes_datos_3.loc[lista_indices_4,'tipo_red'] = ['youtube']*len(lista_indices_4)
 
 
-################ Posicion 4 del vector en el que se separa redes sociales ##############
-patrones_4 = ['instagram| Consulado  Argentino  en  Barcelona ', 'youtube']
-asignaciones_4 = ['instagram', 'youtube']
-lista_sedes_datos_4 = process_redes_sociales(lista_sedes_datos, 3, patrones_4, asignaciones_4)
+################# Posicion 4 del vector en el que se separa redes sociales ##############
+lista_sedes_datos_4 = lista_sedes_datos_extrac[['sede_id','redes_sociales']]
+lista_sedes_datos_4.loc[:,'redes_sociales'] = lista_sedes_datos_4['redes_sociales'].str.split(' // ').str[3]
+lista_sedes_datos_4 = lista_sedes_datos_4[~(lista_sedes_datos_4['redes_sociales'].isnull())].reset_index(drop= True)
+lista_sedes_datos_4 = lista_sedes_datos_4[~(lista_sedes_datos_4['redes_sociales'] == ' ')].reset_index(drop= True)
+lista_sedes_datos_4['tipo_red'] = (np.zeros(len(lista_sedes_datos_4))).astype('object')
+
+#instagram
+lista_indices_3 = np.where(lista_sedes_datos_4['redes_sociales'].str.contains('instagram| Consulado  Argentino  en  Barcelona ', case=False))[0]
+lista_sedes_datos_4.loc[lista_indices_3,'tipo_red'] = ['instagram']*len(lista_indices_3)
+#youtube
+lista_indices_4 = np.where(lista_sedes_datos_4['redes_sociales'].str.contains('youtube', case=False))[0]
+lista_sedes_datos_4.loc[lista_indices_4,'tipo_red'] = ['youtube']*len(lista_indices_4)
+#asigno a mano
 lista_sedes_datos_4.loc[4,'tipo_red'] = 'flickr'
 
+
+
 ################################## concatenacion total ##################################
-REDES_SOCIALES = pd.concat([lista_sedes_datos_1,
-                            lista_sedes_datos_2,
-                            lista_sedes_datos_3,
-                            lista_sedes_datos_4],
-                            ignore_index=True)
-REDES_SOCIALES = REDES_SOCIALES.rename(columns = {'redes_sociales': 'contacto'})
+redes_sociales = concatenated_df = pd.concat([lista_sedes_datos_1, lista_sedes_datos_2, lista_sedes_datos_3, lista_sedes_datos_4], ignore_index=True)
 #%%
 ################################## SEDES ##################################
 #Voy a eliminar los campos de mi tabla donde el estado sea "Inactivo"
