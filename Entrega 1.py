@@ -15,6 +15,28 @@ from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt5')
 #%%
 def process_redes_sociales(lista,posicion, patrones, asignaciones):
+    """
+     Procesa los datos de redes sociales de una lista de sedes, extrayendo información específica
+     según un patrón dado y asignando un tipo de red social a cada entrada.
+    
+     Parámetros:
+     - lista: DataFrame. Información sobre sedes y sus redes sociales.
+     - posicion: int. Posición de la red social dentro de la lista separada por '//' que se debe extraer.
+     - patrones: list of strings. Patrones para identificar tipos específicos de redes sociales.
+     - asignaciones: list of strings. Nombres correspondientes a los tipos de redes sociales identificados
+       por los patrones.
+    
+     Retorna:
+     DataFrame. Datos procesados de las redes sociales de las sedes, incluyendo el tipo de red social asignado.
+    
+     Comportamiento:
+     1. Selecciona 'sede_id' y 'redes_sociales' del DataFrame de entrada.
+     2. Extrae la red social en la posición especificada.
+     3. Elimina filas nulas y redes sociales en blanco.
+     4. Crea 'tipo_red' con valores predeterminados.
+     5. Asigna tipos de red social según patrones.
+     6. Retorna el DataFrame con datos procesados.
+     """
     lista_sedes_datos_temp = lista[['sede_id','redes_sociales']]
     lista_sedes_datos_temp.loc[:,'redes_sociales'] = lista_sedes_datos_temp['redes_sociales'].str.split(' // ').str[posicion]
     lista_sedes_datos_temp = lista_sedes_datos_temp.dropna().reset_index(drop=True)
@@ -27,6 +49,7 @@ def process_redes_sociales(lista,posicion, patrones, asignaciones):
 
     return lista_sedes_datos_temp
 #%%
+#CARGO LOS DATOS
 entradas = os.listdir(path)
 
 flujos = pd.read_csv(entradas[0])
@@ -36,6 +59,11 @@ lista_sedes = pd.read_csv(entradas[3])
 paises = pd.read_csv(entradas[4])
 
 #%%
+'''
+SECCION PAISES/SECCIONES/REGIONES
+En esta sección creamos las tablas PAISES, SECCIONES Y REGION modificando los valores de columnas
+y filas según el objetivo del trabajo
+'''
 #PAISES
 PAISES = paises.copy()
 PAISES = PAISES[['nombre',' iso3']]
@@ -50,6 +78,12 @@ REGION = lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]
 REGION = REGION.rename(columns = {'pais_iso_3' : 'iso3'})
 REGION = REGION.drop_duplicates()
 #%%
+'''
+SECCION FLUJOS MONETARIOS
+Se realiza una transposición de flujos, se renombran las columnas, se elimina la primera fila,
+se reemplazan valores nulos por 0, se convierten los nombres a mayúsculas y se reemplazan ciertos
+nombres de países por sus equivalentes en la tabla paises.
+'''
 #FLUJOS MONETARIOS
 flujos_nuevo = flujos.copy()
 flujos_nuevo = flujos.T.reset_index()
@@ -106,6 +140,12 @@ for (index,i) in enumerate(cols_flujos):
     FLUJOS_MONETARIOS = pd.concat([FLUJOS_MONETARIOS, x])
 
 #%%
+'''
+SECCION REDES SOCIALES
+Dado la funcion process_redes_sociales  genera un dataframe a partir de lista_sedes_datos que 
+tiene por columnas ['sede_id', 'contacto', 'tipo red']
+
+'''
 ###################################  REDES SOCIALES   ############################
 lista_sedes_datos_extrac = lista_sedes_datos.copy()
 
@@ -144,7 +184,12 @@ REDES_SOCIALES = pd.concat([lista_sedes_datos_1,
                             ignore_index=True)
 REDES_SOCIALES = REDES_SOCIALES.rename(columns = {'redes_sociales': 'contacto'})
 #%%
-################################## SEDES ##################################
+'''
+SECCION SEDES: Genera un dataframe a partir de lista_sedes conteniendo los datos esquematizados en el DER
+para la entidad SEDES
+1. Nos quedamos con las sedes Activas
+2. Columnas: ['sede id', 'iso3']
+'''
 #Voy a eliminar los campos de mi tabla donde el estado sea "Inactivo"
 SEDES = lista_sedes.copy()
 
@@ -158,7 +203,6 @@ for x in SEDES.index:
 SEDES = SEDES[['sede_id','pais_iso_3']]
 SEDES = SEDES.rename(columns = {'pais_iso_3' : 'iso3'})
 #%%% CONSULTAS SQL
-
 """
 PUNTO I)
 Para cada país informar cantidad de sedes, cantidad de secciones en promedio que poseen 
@@ -194,7 +238,8 @@ consulta = """
             """
 tablaSeccionesYSedes = sql^ consulta
 
-#Cuento cantidad de secciones por sede_id (cuento las veces que se repiten sede_id, ya que si sede_id se repite 2 veces significa que tiene dos secciones)
+#Cuento cantidad de secciones por sede_id (cuento las veces que se repiten sede_id,
+#ya que si sede_id se repite 2 veces significa que tiene dos secciones)
 consulta = """
             SELECT DISTINCT COUNT(sede_id) AS cantidad_secciones, sede_id, ANY_VALUE(iso3) AS iso3
             FROM tablaSeccionesYSedes 
@@ -227,7 +272,6 @@ consulta = """
 tablaIED2022 = sql^consulta
 
 #Uno este resultado con los resultados anteriores de cant de sedes por pais y secciones por sede y ordeno 
-
 consulta = """
     SELECT tc.cantidad_sedes AS sedes, tc.nombre AS pais, ti."IED 2022 (M U$S)", tc.promedio_secciones AS seccion
     FROM tablaCantidadSedesYSeccionesPorPais as tc
@@ -236,7 +280,7 @@ consulta = """
     ORDER BY tc.cantidad_sedes DESC, tc.nombre
 """
 tablaResultado1 = sql^ consulta
-#FALTA REEMPLAZAR LOS NULLS POR 0 SI ES FLOAT O "-" SI SE ESPERABA UN STRING
+
 #%%
 '''
 II) Reportar agrupando por región geográfica: a) la cantidad de países en que
@@ -244,7 +288,7 @@ Argentina tiene al menos una sede y b) el promedio del IED del año 2022 de
 esos países (promedio sobre países donde Argentina tiene sedes). Ordenar
 de manera descendente por este último campo.
 '''
-#Contamos la cantidas de sedes por pais
+#Contamos la cantidad de sedes por pais
 consulta = '''
 SELECT iso3,COUNT(*) AS "paises con sedes argentinas"
 FROM SEDES
@@ -253,7 +297,7 @@ GROUP BY iso3;
 paises_con_sedes_argentinas = sql^ consulta
 
 
-#cambiar el pais por region
+#cambia el pais por region
 consulta = '''
 SELECT region_geografica, "paises con sedes argentinas"
 FROM paises_con_sedes_argentinas
@@ -262,7 +306,7 @@ JOIN REGION ON paises_con_sedes_argentinas.iso3 = REGION.iso3;
 tabla_region_geografica_cantidad_sedes = sql^ consulta
 
 
-
+# Cuenta la cantidad de sedes argentina en cada región 
 consulta ='''
 SELECT t.region_geografica, SUM("paises con sedes argentinas") AS "paises con sedes argentinas"
 FROM tabla_region_geografica_cantidad_sedes AS t
@@ -279,7 +323,7 @@ WHERE fecha = '2022';
 '''
 flujos_2022 = sql^consulta
 
-#a cada flujo le asigna una region
+#A cada flujo le asigna una region
 consulta = '''
 SELECT monto, region_geografica
 FROM flujos_2022
@@ -296,15 +340,13 @@ GROUP BY region_geografica;
 '''
 flujo_promedio_region = sql^ consulta
 
-
-
+#Hace un natural join entre flujo_promedio_region  y cantidad_sedes_region
 consulta = '''
 SELECT t.region_geografica, t."paises con sedes argentinas", f.promedio AS "Promedio IED 2022 (M U$S)"
 FROM cantidad_sedes_region AS t
 JOIN flujo_promedio_region AS f ON t.region_geografica = f.region_geografica
 ORDER BY f.promedio DESC;
 '''
-
 tablaResultado2 = sql^consulta
 
 #%%
@@ -318,7 +360,6 @@ tilizan 4 redes de facebook, 5 de instagram y 4 de twitter, el valor para Chile 
 (facebook, instagram y twitter).
 """
 #armo tabla de sedes con red social para lograr tener la foreign key iso3
-
 consulta9 = """
     SELECT rs.contacto, rs.tipo_red, s.iso3
     FROM REDES_SOCIALES AS rs
@@ -338,8 +379,6 @@ consulta10 = """
 tablaPaisesYRedes = sql ^ consulta10
 
 #cuento la cantidad de tipo_red para cada pais, uso el distinct para que me cuente solo los que son distintos
-
-
 consulta11 = """
         SELECT COUNT(DISTINCT tipo_red) AS cantidad_tipos_redes, ANY_VALUE(nombre) AS pais
         FROM tablaPaisesYRedes
@@ -357,6 +396,7 @@ Ordenar de manera ascendente por nombre de país, sede, tipo de red y
 finalmente por url.
 '''
 
+#A cada sede_id en REDES_SOCIALES le asigna un iso3 a través de un natural join entre SEDES y REDES_SOCIALES
 consulta= '''
 SELECT s.sede_id, r.contacto,r.tipo_red,s.iso3
 FROM REDES_SOCIALES AS r
@@ -365,7 +405,8 @@ JOIN SEDES AS s ON s.sede_id = r.sede_id;
 primer_join = sql^consulta
 
 
-
+#A cada iso3 le asigna un nombre de pais y ordena en forma ascendente por:
+#1.nombre, 2.sede_id , 3. tipo_red y 4.contacto
 consulta = '''
 SELECT p.nombre AS pais, p1.sede_id AS Sede, p1.contacto AS URL , p1.tipo_red AS "red social"
 FROM primer_join AS p1
@@ -377,76 +418,81 @@ tablaResultado4 = sql^consulta
 
 #%%
 ###################################  GRAFICOS   ############################
-plt.figure(figsize=(10, 6))
-plt.bar(tablaResultado2['region_geografica'],
-        tablaResultado2['paises con sedes argentinas'], color='skyblue')
-plt.xlabel('Region')
-plt.ylabel('Number of Embassies')
-plt.title('Number of Embassies by Region')
-plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
+
+tablaResultado2_sorted = tablaResultado2.sort_values('paises con sedes argentinas', ascending=False)
+# Configuración de Seaborn para mejorar la estética
+sns.set(style="whitegrid")
+
+# Crear la figura y el eje
+plt.figure(figsize=(12, 8))
+
+# Gráfico de barras con Seaborn
+ax = sns.barplot(x='region_geografica', y='paises con sedes argentinas', data=tablaResultado2_sorted, palette='cool')
+
+# Añadir etiquetas a cada barra
+for p in ax.patches:
+    ax.annotate(format(p.get_height(), '.0f'), 
+                (p.get_x() + p.get_width() / 2., p.get_height()), 
+                ha = 'center', va = 'center', 
+                xytext = (0, 9), 
+                textcoords = 'offset points')
+
+# Configurar las etiquetas y el título del gráfico
+ax.set_xlabel('Región', fontsize=14, fontweight='bold')
+ax.set_ylabel('Cantidad de Sedes', fontsize=14, fontweight='bold')
+ax.set_title('Cantidad de Sedes vs Regiones', fontsize=16, fontweight='bold')
+plt.xticks(rotation=45, ha='right', fontsize=12)  # Mejorar la legibilidad de las etiquetas
+
+# Ajustar layout
 plt.tight_layout()
+
+# Mostrar el gráfico
 plt.show()
 #%%
-#BOXPLOT
 
+# Calcular el promedio del IED por país para el período 2018-2022
 df_temp = FLUJOS_MONETARIOS.groupby('iso3')['monto'].mean().reset_index()
 
-result = pd.merge(df_temp, REGION)
+# Fusionar con la información de la región geográfica
+result = pd.merge(df_temp, REGION, on='iso3')
 
-rcParams['font.family'] = 'sans-serif'
-rcParams['axes.spines.right'] = False
-rcParams['axes.spines.left'] = True
-rcParams['axes.spines.top'] = False
-rcParams['axes.spines.bottom'] = False
+# Preparar los datos para el gráfico
+# Asegurarse de que los datos estén ordenados por la mediana de cada región para el trazado
+order = result.groupby('region_geografica')['monto'].median().sort_values(ascending=False).index
 
-fig, ax = plt.subplots()
+sns.set(style="whitegrid")
 
-result.boxplot(by=['region_geografica'], column=['monto'], 
-               ax=ax, grid=False, showmeans=True)
+# Crear la figura y el eje
+plt.figure(figsize=(14, 8))
 
-ax.set_xlabel('Región Geográfica')
-ax.set_ylabel('Flujo Promedio (2018-2022)')
-ax.set_title('Distribución de Flujos Promedio por Región Geográfica')
+# Crear el boxplot con ajustes
+ax = sns.boxplot(x='region_geografica', y='monto', data=result, order= order, palette='coolwarm', showfliers=True)
+ax.set_yscale('log')  # Usar escala logarítmica para mejorar la visualización
 
+# Mejorar las etiquetas y el título
+ax.set_xlabel('Región Geográfica', fontsize=12, fontweight='bold')
+ax.set_ylabel('Flujo Promedio (2018-2022) [log scale]', fontsize=12, fontweight='bold')
+ax.set_title('Distribución de Flujos Promedio por Región Geográfica', fontsize=14, fontweight='bold')
+
+# Rotación de las etiquetas del eje x para mejorar la legibilidad
 plt.xticks(rotation=45, ha='right')
-plt.show()
-#%%
-plt.figure(figsize=(10, 6))
-for i, row in tablaResultado1.iterrows():
-    plt.scatter(row['sedes'], row['IED_2022'], label=row['pais'])
 
-plt.xlabel('Number of Embassies')
-plt.ylabel('Investment')
-plt.title('Investment vs Number of Embassies by Country')
-plt.grid(True)
+# Mejorar la presentación
+sns.despine(trim=True, left=True)
+
+# Mostrar el gráfico
 plt.tight_layout()
-plt.show()
-
-#%% 
-
-#boxplot normalizado
-tabla_curada = tablaResultado1[~(tablaResultado1['IED_2022'].isna())]
-
-scaler = MinMaxScaler()
-
-# Apply MinMaxScaler to 'IED_2022' column
-tabla_curada['IED_2022_normalized'] = scaler.fit_transform(tabla_curada[['IED_2022']])
-
-# Plot the boxplot with normalized data
-sns.boxplot(x='sedes', y='IED_2022_normalized', data=tabla_curada.fillna({'IED_2022': 0, 'seccion': 0}))
-plt.xlabel('sedes')
-plt.ylabel('Normalized IED_2022')
-plt.title('Boxplot of Normalized IED_2022 by sedes')
 plt.show()
 #%%
 #sin normalizar
-tabla_curada = tabla_curada[~(tabla_curada['IED_2022'] ==tabla_curada['IED_2022'].min())]
+tabla_curada = tabla_curada[~(tabla_curada['IED 2022 (M U$S)'] ==tabla_curada['IED 2022 (M U$S)'].min())]
 
 for i in [3,5,8,9,11]:
     tabla_curada = tabla_curada[~(tabla_curada['sedes'] == i)]
     
     
-sns.boxplot(x='sedes', y='IED_2022', data=tabla_curada)
+sns.boxplot(x='sedes', y='IED 2022 (M U$S)', data=tabla_curada)
+ax.set_yscale('log')
 plt.xlabel('sedes')
 plt.ylabel('IED_2022')
 plt.title('Boxplot of IED_2022 by sedes')
