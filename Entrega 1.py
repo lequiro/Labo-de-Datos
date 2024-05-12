@@ -44,7 +44,7 @@ SECCIONES = lista_secciones.copy()
 SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
 SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
 
-REGION = (lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]).unique()
+REGION = lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]
 REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
 
 #%%
@@ -94,7 +94,7 @@ flujos_nuevo = pd.merge(flujos_nuevo, PAISES, how='inner')
 
 
 ####################### CREACION FLUJOS MONETARIOS ###########################
-cols_flujos =flujos_nuevo.columns[1:]
+cols_flujos =flujos_nuevo.columns[1:44]
 cols_flujos_fechas = cols_flujos.str.extract('(\d+)-')
 FLUJOS_MONETARIOS = pd.DataFrame()
 for (index,i) in enumerate(cols_flujos):
