@@ -1,14 +1,16 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
+import seaborn as sns  
+from sklearn.preprocessing import MinMaxScaler
 from   matplotlib import ticker 
 from matplotlib import rcParams
 from inline_sql import sql, sql_val
-import os
-import seaborn as sns  
-
-path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\datasets'
+path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\TP01-MLJ\TablasOriginales'
 os.chdir(path)
+#%%
+#Esto te abre los gráficos en una ventana aparte
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt5')
 #%%
@@ -24,8 +26,6 @@ def process_redes_sociales(lista,posicion, patrones, asignaciones):
         lista_sedes_datos_temp.loc[lista_indices, 'tipo_red'] = [asignaciones[i]] * len(lista_indices)
 
     return lista_sedes_datos_temp
-
-
 #%%
 entradas = os.listdir(path)
 
@@ -35,25 +35,20 @@ lista_sedes_datos = pd.read_csv(entradas[2], on_bad_lines= 'skip')
 lista_sedes = pd.read_csv(entradas[3])
 paises = pd.read_csv(entradas[4])
 
-
-
 #%%
 #PAISES
-
 PAISES = paises.copy()
 PAISES = PAISES[['nombre',' iso3']]
 PAISES = PAISES.rename(columns ={' iso3': 'iso3'})
 PAISES['nombre'] = PAISES['nombre'].str.upper().replace({'Á': 'A','É': 'E','Í': 'I','Ó': 'O','Ú': 'U', 'Ô': 'O', 'Å':'A', '-': ' '}, regex = True)
-
 #SECCIONES
 SECCIONES = lista_secciones.copy()
 SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
 SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
-
+#REGIONES
 REGION = lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]
 REGION = REGION.rename(columns = {'pais_iso_3' : 'iso3'})
 REGION = REGION.drop_duplicates()
-
 #%%
 #FLUJOS MONETARIOS
 flujos_nuevo = flujos.copy()
@@ -162,7 +157,6 @@ for x in SEDES.index:
 #Al mismo tiempo quiero eliminar la columna de "sede_tipo" ya que no es relevante para mi objetivo
 SEDES = SEDES[['sede_id','pais_iso_3']]
 SEDES = SEDES.rename(columns = {'pais_iso_3' : 'iso3'})
-
 #%%% CONSULTAS SQL
 
 """
@@ -174,89 +168,74 @@ descendente). En caso de empate, ordenar alfabéticamente por nombre de país
 
 """
 #Cuento cantidad de sedes por pais
-consulta1 = """
+consulta = """
                SELECT p.iso3, COUNT(s.sede_id) AS cantidad_sedes,
                FROM PAISES AS p
                LEFT OUTER JOIN SEDES AS s ON p.iso3 = s.iso3
                GROUP BY p.iso3;
-              """
-              
-tablaContadorSedes = sql^ consulta1
-
-# consulta1 =  """
-#                SELECT s.iso3, COUNT(s.sede_id) AS cantidad_sedes,
-#                FROM SEDES AS s
-#                GROUP BY s.iso3;
-
-#              """
-# tablaContadorSedes1 = sql^ consulta1 #esta se queda con solo los que estan en tabla sedes
-
-
-
+              """   
+tablaContadorSedes = sql^ consulta
 
 #Agrego resultado anterior a la tabla
-consulta2 = """
+consulta = """
                SELECT DISTINCT p.nombre, t.cantidad_sedes, p.iso3
                FROM PAISES AS p
                 JOIN tablaContadorSedes AS t
                ON p.iso3 = t.iso3
               """
-
-tablaPaisesYSedes = sql^ consulta2
+tablaPaisesYSedes = sql^ consulta
 
 #Junto tabla secciones y tabla sedes
-
-consulta3 = """
+consulta = """
              SELECT DISTINCT sec.tipo_seccion, sed.iso3, sed.sede_id,
              FROM SEDES AS sed
              LEFT JOIN SECCIONES AS sec
              ON sed.sede_id = sec.sede_id
             """
-tablaSeccionesYSedes = sql^ consulta3
-#Cuento cantidad de secciones por sede_id (cuento las veces que se repiten sede_id, ya que si sede_id se repite 2 veces significa que tiene dos secciones)
+tablaSeccionesYSedes = sql^ consulta
 
-consulta5 = """
+#Cuento cantidad de secciones por sede_id (cuento las veces que se repiten sede_id, ya que si sede_id se repite 2 veces significa que tiene dos secciones)
+consulta = """
             SELECT DISTINCT COUNT(sede_id) AS cantidad_secciones, sede_id, ANY_VALUE(iso3) AS iso3
             FROM tablaSeccionesYSedes 
             GROUP BY sede_id
 
     """
-tablaCantidadSeccionesPorSede = sql^ consulta5
+tablaCantidadSeccionesPorSede = sql^ consulta
 
-consulta4 = """
+consulta = """
     SELECT ROUND(AVG(t.cantidad_secciones),2) AS promedio_secciones, ANY_VALUE(t.sede_id) AS sede_id, t.iso3
     FROM tablaCantidadSeccionesPorSede as t
     GROUP BY iso3
 """
-tablaPromedioSeccionesPorSede = sql^ consulta4
+tablaPromedioSeccionesPorSede = sql^ consulta
 
-consulta6 = """
+consulta = """
         SELECT tc.sede_id, tp.cantidad_sedes, tc.promedio_secciones, tp.nombre, tp.iso3
         FROM tablaPaisesYSedes AS tp
         LEFT JOIN  tablaPromedioSeccionesPorSede AS tc
         ON tc.iso3 = tp.iso3
 """
-tablaCantidadSedesYSeccionesPorPais = sql^ consulta6
+tablaCantidadSedesYSeccionesPorPais = sql^ consulta
 #calculo el flujo en 2022 por pais
-#PODRIAMOS AGREGAR EN QUE SE ESTA MIDIENDO EL FLUJO (USD$??)
-consulta7 = """
-    SELECT monto AS IED_2022, iso3
+consulta = """
+    SELECT monto AS "IED 2022 (M U$S)", iso3
     FROM FLUJOS_MONETARIOS
     WHERE fecha == '2022'
 """
 
-tablaIED2022 = sql^consulta7
+tablaIED2022 = sql^consulta
 
 #Uno este resultado con los resultados anteriores de cant de sedes por pais y secciones por sede y ordeno 
 
-consulta8 = """
-    SELECT tc.cantidad_sedes AS sedes, tc.nombre AS pais, ti.IED_2022, tc.promedio_secciones AS seccion
+consulta = """
+    SELECT tc.cantidad_sedes AS sedes, tc.nombre AS pais, ti."IED 2022 (M U$S)", tc.promedio_secciones AS seccion
     FROM tablaCantidadSedesYSeccionesPorPais as tc
     LEFT JOIN tablaIED2022 as ti
     ON tc.iso3 = ti.iso3
     ORDER BY tc.cantidad_sedes DESC, tc.nombre
 """
-tablaResultado1 = sql^ consulta8
+tablaResultado1 = sql^ consulta
 #FALTA REEMPLAZAR LOS NULLS POR 0 SI ES FLOAT O "-" SI SE ESPERABA UN STRING
 #%%
 '''
@@ -320,7 +299,7 @@ flujo_promedio_region = sql^ consulta
 
 
 consulta = '''
-SELECT t.region_geografica, t."paises con sedes argentinas", f.promedio AS "Promedio IED 2002 (M U$S)"
+SELECT t.region_geografica, t."paises con sedes argentinas", f.promedio AS "Promedio IED 2022 (M U$S)"
 FROM cantidad_sedes_region AS t
 JOIN flujo_promedio_region AS f ON t.region_geografica = f.region_geografica
 ORDER BY f.promedio DESC;
@@ -362,7 +341,7 @@ tablaPaisesYRedes = sql ^ consulta10
 
 
 consulta11 = """
-        SELECT COUNT(DISTINCT tipo_red) AS cantidad_tipos, iso3, ANY_VALUE(nombre) AS pais
+        SELECT COUNT(DISTINCT tipo_red) AS cantidad_tipos_redes, ANY_VALUE(nombre) AS pais
         FROM tablaPaisesYRedes
         GROUP BY iso3
 """
@@ -391,7 +370,7 @@ consulta = '''
 SELECT p.nombre AS pais, p1.sede_id AS Sede, p1.contacto AS URL , p1.tipo_red AS "red social"
 FROM primer_join AS p1
 JOIN PAISES AS p ON p.iso3 = p1.iso3
-ORDER BY p.nombre ASC;
+ORDER BY p.nombre ASC, p1.sede_id ASC,p1.tipo_red ASC, p1.contacto ASC;
 '''
 
 tablaResultado4 = sql^consulta
@@ -445,20 +424,47 @@ plt.show()
 
 #%% 
 
-#violinplot
-tabla_curada = tablaResultado1[~tablaResultado1['IED_2022'].isna()]
+#boxplot normalizado
+tabla_curada = tablaResultado1[~(tablaResultado1['IED_2022'].isna())]
 
-ax = sns.violinplot(x ='sedes', y ='IED_2022', data = tabla_curada)
+scaler = MinMaxScaler()
 
-ax.set_title('Propinas')
-ax.set_xlabel('sexo')
-ax.set_ylabel('Valor de Propina ($)')
-ax.yaxis.set_major_formatter(ticker.StrMethodFormatter("$ {x:,.2f}")); # Agrega separador de decimales y signo $
-ax.set_ylim(0,12)
-ax.set_xticklabels(['Femenino','Masculino'])   
+# Apply MinMaxScaler to 'IED_2022' column
+tabla_curada['IED_2022_normalized'] = scaler.fit_transform(tabla_curada[['IED_2022']])
+
+# Plot the boxplot with normalized data
+sns.boxplot(x='sedes', y='IED_2022_normalized', data=tabla_curada.fillna({'IED_2022': 0, 'seccion': 0}))
+plt.xlabel('sedes')
+plt.ylabel('Normalized IED_2022')
+plt.title('Boxplot of Normalized IED_2022 by sedes')
+plt.show()
+#%%
+#sin normalizar
+tabla_curada = tabla_curada[~(tabla_curada['IED_2022'] ==tabla_curada['IED_2022'].min())]
+
+for i in [3,5,8,9,11]:
+    tabla_curada = tabla_curada[~(tabla_curada['sedes'] == i)]
+    
+    
+sns.boxplot(x='sedes', y='IED_2022', data=tabla_curada)
+plt.xlabel('sedes')
+plt.ylabel('IED_2022')
+plt.title('Boxplot of IED_2022 by sedes')
+plt.show()
 
 
+#%%
+path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\TP01-MLJ\TablasLimpias'
+os.chdir(path)
 
+SEDES.to_csv('sedes.csv', index=False)
+REDES_SOCIALES.to_csv('redes_sociales.csv', index=False)
+FLUJOS_MONETARIOS.to_csv('flujos_monetarios.csv', index=False)
+SECCIONES.to_csv('secciones.csv', index=False)
+PAISES.to_csv('paises.csv', index=False)
+REGION.to_csv('region.csv', index=False)
 
-
-
+tablaResultado1.to_csv(r'.\Anexo\consulta_1.csv',index = False)
+tablaResultado2.to_csv(r'.\Anexo\consulta_2.csv',index = False)
+tablaResultado3.to_csv(r'.\Anexo\consulta_3.csv',index = False)
+tablaResultado4.to_csv(r'.\Anexo\consulta_4.csv',index = False)
