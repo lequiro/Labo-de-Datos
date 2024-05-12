@@ -45,7 +45,7 @@ SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
 SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
 
 REGION = (lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]).unique()
-# REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
+REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
 
 #%%
 #FLUJOS MONETARIOS
