@@ -484,21 +484,36 @@ sns.despine(trim=True, left=True)
 plt.tight_layout()
 plt.show()
 #%%
-#sin normalizar
 tabla_curada = tabla_curada[~(tabla_curada['IED 2022 (M U$S)'] ==tabla_curada['IED 2022 (M U$S)'].min())]
 
 for i in [3,5,8,9,11]:
     tabla_curada = tabla_curada[~(tabla_curada['sedes'] == i)]
-    
-    
-sns.boxplot(x='sedes', y='IED 2022 (M U$S)', data=tabla_curada)
+# Configuración de Seaborn para mejorar la estética
+sns.set(style="whitegrid")
+
+# Crear la figura y el eje
+plt.figure(figsize=(12, 8))
+
+# Crear el boxplot
+ax = sns.boxplot(x='sedes', y='IED 2022 (M U$S)', data=tabla_curada, palette='viridis')
+
+# Configurar la escala del eje Y para mejorar la visualización
 ax.set_yscale('log')
-plt.xlabel('sedes')
-plt.ylabel('IED_2022')
-plt.title('Boxplot of IED_2022 by sedes')
+
+# Mejorar las etiquetas y el título
+ax.set_xlabel('Number of Embassies', fontsize=12, fontweight='bold')
+ax.set_ylabel('IED 2022 (M U$S) [log scale]', fontsize=12, fontweight='bold')
+ax.set_title('Relationship between IED 2022 and Number of Argentinian Embassies Abroad', fontsize=14, fontweight='bold')
+
+# Ajustar las etiquetas del eje x para una mejor presentación
+plt.xticks(rotation=45, ha='right')
+
+# Mejorar la presentación desactivando algunos bordes
+sns.despine(trim=True, left=True)
+
+# Mostrar el gráfico
+plt.tight_layout()
 plt.show()
-
-
 #%%
 path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\TP01-MLJ\TablasLimpias'
 os.chdir(path)
