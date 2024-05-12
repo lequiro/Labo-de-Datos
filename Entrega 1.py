@@ -44,6 +44,9 @@ SECCIONES = lista_secciones.copy()
 SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
 SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
 
+REGION = (lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]).unique()
+# REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
+
 #%%
 #FLUJOS MONETARIOS
 flujos_nuevo = flujos.copy()
@@ -91,7 +94,7 @@ flujos_nuevo = pd.merge(flujos_nuevo, PAISES, how='inner')
 
 
 ####################### CREACION FLUJOS MONETARIOS ###########################
-cols_flujos =flujos_nuevo.columns[39:44]
+cols_flujos =flujos_nuevo.columns[1:]
 cols_flujos_fechas = cols_flujos.str.extract('(\d+)-')
 FLUJOS_MONETARIOS = pd.DataFrame()
 for (index,i) in enumerate(cols_flujos):
@@ -150,7 +153,7 @@ for x in SEDES.index:
 
 #Como se que son todas sedes activas, puedo eliminar la columna "estado"
 #Al mismo tiempo quiero eliminar la columna de "sede_tipo" ya que no es relevante para mi objetivo
-SEDES = SEDES[['sede_id','pais_iso_3','sede_tipo']]
+SEDES = SEDES[['sede_id','pais_iso_3']]
 SEDES = SEDES.rename(columns = {'pais_iso_3' : 'iso3'})
 
 #%%% CONSULTAS SQL
