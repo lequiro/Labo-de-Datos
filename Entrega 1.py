@@ -1,10 +1,15 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+from   matplotlib import ticker 
+from matplotlib import rcParams
 from inline_sql import sql, sql_val
 import os
+
 path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\datasets'
 os.chdir(path)
-
+from IPython import get_ipython
+get_ipython().run_line_magic('matplotlib', 'qt5')
 #%%
 def process_redes_sociales(lista,posicion, patrones, asignaciones):
     lista_sedes_datos_temp = lista[['sede_id','redes_sociales']]
@@ -45,7 +50,8 @@ SECCIONES = lista_secciones[['sede_id','sede_desc_castellano','tipo_seccion']]
 SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
 
 REGION = lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]
-REGION = REGION.rename(columns = {'pais_iso_3' : 'iso_3'})
+REGION = REGION.rename(columns = {'pais_iso_3' : 'iso3'})
+REGION = REGION.drop_duplicates()
 
 #%%
 #FLUJOS MONETARIOS
@@ -94,7 +100,7 @@ flujos_nuevo = pd.merge(flujos_nuevo, PAISES, how='inner')
 
 
 ####################### CREACION FLUJOS MONETARIOS ###########################
-cols_flujos =flujos_nuevo.columns[1:44]
+cols_flujos =flujos_nuevo.columns[39:44]
 cols_flujos_fechas = cols_flujos.str.extract('(\d+)-')
 FLUJOS_MONETARIOS = pd.DataFrame()
 for (index,i) in enumerate(cols_flujos):
@@ -158,7 +164,6 @@ SEDES = SEDES.rename(columns = {'pais_iso_3' : 'iso3'})
 
 #%%% CONSULTAS SQL
 
-
 """
 PUNTO I)
 Para cada país informar cantidad de sedes, cantidad de secciones en promedio que poseen 
@@ -173,10 +178,21 @@ consulta1 = """
                FROM PAISES AS p
                LEFT OUTER JOIN SEDES AS s ON p.iso3 = s.iso3
                GROUP BY p.iso3;
-
               """
               
 tablaContadorSedes = sql^ consulta1
+
+# consulta1 =  """
+#                SELECT s.iso3, COUNT(s.sede_id) AS cantidad_sedes,
+#                FROM SEDES AS s
+#                GROUP BY s.iso3;
+
+#              """
+# tablaContadorSedes1 = sql^ consulta1 #esta se queda con solo los que estan en tabla sedes
+
+
+
+
 #Agrego resultado anterior a la tabla
 consulta2 = """
                SELECT DISTINCT p.nombre, t.cantidad_sedes, p.iso3
@@ -190,15 +206,14 @@ tablaPaisesYSedes = sql^ consulta2
 #Junto tabla secciones y tabla sedes
 
 consulta3 = """
-   SELECT DISTINCT sec.tipo_seccion, sed.iso3, sed.sede_id,
-   FROM SEDES AS sed
-   LEFT JOIN SECCIONES AS sec
-   ON sed.sede_id = sec.sede_id
-    
-"""
+             SELECT DISTINCT sec.tipo_seccion, sed.iso3, sed.sede_id,
+             FROM SEDES AS sed
+             LEFT JOIN SECCIONES AS sec
+             ON sed.sede_id = sec.sede_id
+            """
 tablaSeccionesYSedes = sql^ consulta3
 #Cuento cantidad de secciones por sede_id (cuento las veces que se repiten sede_id, ya que si sede_id se repite 2 veces significa que tiene dos secciones)
-#FALTA CALCULAR EL PROMEDIO
+
 consulta5 = """
             SELECT DISTINCT COUNT(sede_id) AS cantidad_secciones, sede_id, ANY_VALUE(iso3) AS iso3
             FROM tablaSeccionesYSedes 
@@ -242,7 +257,78 @@ consulta8 = """
 """
 tablaResultado1 = sql^ consulta8
 #FALTA REEMPLAZAR LOS NULLS POR 0 SI ES FLOAT O "-" SI SE ESPERABA UN STRING
-        
+#%%
+'''
+II) Reportar agrupando por región geográfica: a) la cantidad de países en que
+Argentina tiene al menos una sede y b) el promedio del IED del año 2022 de
+esos países (promedio sobre países donde Argentina tiene sedes). Ordenar
+de manera descendente por este último campo.
+'''
+#Contamos la cantidas de sedes por pais
+consulta = '''
+SELECT iso3,COUNT(*) AS "paises con sedes argentinas"
+FROM SEDES
+GROUP BY iso3;
+'''
+paises_con_sedes_argentinas = sql^ consulta
+
+
+#cambiar el pais por region
+consulta = '''
+SELECT region_geografica, "paises con sedes argentinas"
+FROM paises_con_sedes_argentinas
+JOIN REGION ON paises_con_sedes_argentinas.iso3 = REGION.iso3;
+'''
+tabla_region_geografica_cantidad_sedes = sql^ consulta
+
+
+
+consulta ='''
+SELECT t.region_geografica, SUM("paises con sedes argentinas") AS "paises con sedes argentinas"
+FROM tabla_region_geografica_cantidad_sedes AS t
+GROUP BY t.region_geografica;
+'''
+cantidad_sedes_region = sql^consulta
+
+
+#se queda con los flujos del 2022 
+consulta = '''
+SELECT (*)
+FROM FLUJOS_MONETARIOS
+WHERE fecha = '2022';
+'''
+flujos_2022 = sql^consulta
+
+#a cada flujo le asigna una region
+consulta = '''
+SELECT monto, region_geografica
+FROM flujos_2022
+JOIN REGION ON flujos_2022.iso3 = REGION.iso3;
+'''
+flujo_region = sql^consulta
+
+
+#le saca el promedio por region
+consulta = '''
+SELECT region_geografica,AVG(monto) AS promedio
+FROM flujo_region
+GROUP BY region_geografica;
+'''
+flujo_promedio_region = sql^ consulta
+
+
+
+consulta = '''
+SELECT t.region_geografica, t."paises con sedes argentinas", f.promedio AS "Promedio IED 2002 (M U$S)"
+FROM cantidad_sedes_region AS t
+JOIN flujo_promedio_region AS f ON t.region_geografica = f.region_geografica
+ORDER BY f.promedio DESC;
+'''
+
+tablaResultado2 = sql^consulta
+
+#%%
+    
 """
 III) Para saber cuál es la vía de comunicación de las sedes en cada país, nos
 hacemos la siguiente pregunta: ¿Cuán variado es, en cada el país, el tipo de 
@@ -280,4 +366,103 @@ consulta11 = """
         GROUP BY iso3
 """
 
-tablaCantidadRedPorPais = sql ^ consulta11
+tablaResultado3 = sql ^ consulta11
+
+
+#%%
+
+
+'''
+IV) Confeccionar un reporte con la información de redes sociales, donde se
+indique para cada caso: el país, la sede, el tipo de red social y url utilizada.
+Ordenar de manera ascendente por nombre de país, sede, tipo de red y
+finalmente por url.
+'''
+
+consulta= '''
+SELECT s.sede_id, r.contacto,r.tipo_red,s.iso3
+FROM REDES_SOCIALES AS r
+JOIN SEDES AS s ON s.sede_id = r.sede_id;
+'''
+primer_join = sql^consulta
+
+
+
+consulta = '''
+SELECT p.nombre AS pais, p1.sede_id AS Sede, p1.contacto AS URL , p1.tipo_red AS "red social"
+FROM primer_join AS p1
+JOIN PAISES AS p ON p.iso3 = p1.iso3
+ORDER BY p.nombre ASC;
+'''
+
+tablaResultado4 = sql^consulta
+
+
+
+
+#%%%
+
+###################################  GRAFICOS   ############################
+plt.figure(figsize=(10, 6))
+plt.bar(tablaResultado2['region_geografica'],
+        tablaResultado2.sort_values(by='Promedio IED 2002 (M U$S)', ascending=False)['Promedio IED 2002 (M U$S)'], color='skyblue')
+plt.xlabel('Region')
+plt.ylabel('Number of Embassies')
+plt.title('Number of Embassies by Region')
+plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
+plt.tight_layout()
+plt.show()
+
+
+#%%
+###################################  GRAFICOS   ############################
+plt.figure(figsize=(10, 6))
+plt.bar(tablaResultado2['region_geografica'],
+        tablaResultado2.sort_values(by='Promedio IED 2002 (M U$S)', ascending=False)['Promedio IED 2002 (M U$S)'], color='skyblue')
+plt.xlabel('Region')
+plt.ylabel('Number of Embassies')
+plt.title('Number of Embassies by Region')
+plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
+plt.tight_layout()
+plt.show()
+#%%
+#BOXPLOT
+
+df_temp = FLUJOS_MONETARIOS.groupby('iso3')['monto'].mean().reset_index()
+
+result = pd.merge(df_temp, REGION)
+
+rcParams['font.family'] = 'sans-serif'
+rcParams['axes.spines.right'] = False
+rcParams['axes.spines.left'] = True
+rcParams['axes.spines.top'] = False
+rcParams['axes.spines.bottom'] = False
+
+fig, ax = plt.subplots()
+
+result.boxplot(by=['region_geografica'], column=['monto'], 
+               ax=ax, grid=False, showmeans=True)
+
+ax.set_xlabel('Región Geográfica')
+ax.set_ylabel('Flujo Promedio (2018-2022)')
+ax.set_title('Distribución de Flujos Promedio por Región Geográfica')
+
+plt.xticks(rotation=45, ha='right')
+plt.show()
+#%%
+plt.figure(figsize=(10, 6))
+for i, row in tablaResultado1.iterrows():
+    plt.scatter(row['sedes'], row['IED_2022'], label=row['pais'])
+
+plt.xlabel('Number of Embassies')
+plt.ylabel('Investment')
+plt.title('Investment vs Number of Embassies by Country')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+
+
+
+
+
