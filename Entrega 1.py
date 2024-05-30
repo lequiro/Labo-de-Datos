@@ -2,17 +2,18 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-import seaborn as sns  
-from sklearn.preprocessing import MinMaxScaler
-from   matplotlib import ticker 
-from matplotlib import rcParams
+import seaborn as sns   
 from inline_sql import sql, sql_val
-path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\TP01-MLJ\TablasOriginales'
-os.chdir(path)
 #%%
-#Esto te abre los gráficos en una ventana aparte
+#Esto te abre los gráficos en una ventana aparte (CORRERLO ES OPCIONAL)
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt5')
+#%%
+#seteo el working directory
+desktop_directory = os.path.join(os.path.expanduser('~'), "Desktop")
+desktop_directory = os.path.join(desktop_directory,"TP01-MLJ", "TablasOriginales")
+os.chdir(desktop_directory)
+entradas = os.listdir(desktop_directory)
 #%%
 def process_redes_sociales(lista,posicion, patrones, asignaciones):
     """
@@ -50,7 +51,7 @@ def process_redes_sociales(lista,posicion, patrones, asignaciones):
     return lista_sedes_datos_temp
 #%%
 #CARGO LOS DATOS
-entradas = os.listdir(path)
+entradas = os.listdir(script_directory)
 
 flujos = pd.read_csv(entradas[0])
 lista_secciones= pd.read_csv(entradas[1])
@@ -418,18 +419,17 @@ tablaResultado4 = sql^consulta
 
 #%%
 ###################################  GRAFICOS   ############################
-
+'''
+i) 
+Cantidad de sedes por región geográfica. Mostrarlos ordenados de manera decreciente por dicha cantidad.
+'''
+    
 tablaResultado2_sorted = tablaResultado2.sort_values('paises con sedes argentinas', ascending=False)
-# Configuración de Seaborn para mejorar la estética
 sns.set(style="whitegrid")
-
-# Crear la figura y el eje
 plt.figure(figsize=(12, 8))
 
-# Gráfico de barras con Seaborn
-ax = sns.barplot(x='region_geografica', y='paises con sedes argentinas', data=tablaResultado2_sorted, palette='cool')
+ax = sns.barplot(x='region_geografica', y='paises con sedes argentinas', data=tablaResultado2_sorted, palette='cool') # Gráfico de barras con Seaborn
 
-# Añadir etiquetas a cada barra
 for p in ax.patches:
     ax.annotate(format(p.get_height(), '.0f'), 
                 (p.get_x() + p.get_width() / 2., p.get_height()), 
@@ -437,85 +437,85 @@ for p in ax.patches:
                 xytext = (0, 9), 
                 textcoords = 'offset points')
 
-# Configurar las etiquetas y el título del gráfico
+
 ax.set_xlabel('Región', fontsize=14, fontweight='bold')
 ax.set_ylabel('Cantidad de Sedes', fontsize=14, fontweight='bold')
 ax.set_title('Cantidad de Sedes vs Regiones', fontsize=16, fontweight='bold')
-plt.xticks(rotation=45, ha='right', fontsize=12)  # Mejorar la legibilidad de las etiquetas
+plt.xticks(rotation=45, ha='right', fontsize=12)  
 
-# Ajustar layout
+
 plt.tight_layout()
 
-# Mostrar el gráfico
+
 plt.show()
 #%%
+'''
+ii)
+Boxplot, por cada región geográfica, del valor correspondiente al promedio del IED 
+(para calcular el promedio tomar los valores anuales correspondientes al período 2018-2022) de los países donde Argentina tiene una delegación. 
+Mostrar todos los boxplots en una misma figura, ordenados por la mediana de cada región.
 
-# Calcular el promedio del IED por país para el período 2018-2022
-df_temp = FLUJOS_MONETARIOS.groupby('iso3')['monto'].mean().reset_index()
+'''
+promedio_2018_2022 = FLUJOS_MONETARIOS.groupby('iso3')['monto'].mean().reset_index() # Calcular el promedio del IED por país para el período 2018-2022
 
-# Fusionar con la información de la región geográfica
-result = pd.merge(df_temp, REGION, on='iso3')
+promedio_region = pd.merge(promedio_2018_2022, REGION, on='iso3') # Natural join promedio_2018_2022 con REGION
 
-# Preparar los datos para el gráfico
-# Asegurarse de que los datos estén ordenados por la mediana de cada región para el trazado
-order = result.groupby('region_geografica')['monto'].median().sort_values(ascending=False).index
+ordenado = promedio_region.groupby('region_geografica')['monto'].median().sort_values(ascending=False).index
 
 sns.set(style="whitegrid")
 
-# Crear la figura y el eje
+
 plt.figure(figsize=(14, 8))
 
-# Crear el boxplot con ajustes
-ax = sns.boxplot(x='region_geografica', y='monto', data=result, order= order, palette='coolwarm', showfliers=True)
-ax.set_yscale('log')  # Usar escala logarítmica para mejorar la visualización
+# Crear el boxplot 
+ax = sns.boxplot(x='region_geografica', y='monto', data=promedio_region, order= ordenado, palette='coolwarm', showfliers=True)
+ax.set_yscale('log')  # escala logarítmica para mejorar la visualización. NOTA: los valores negativos no aparecerán en el gráfico
 
-# Mejorar las etiquetas y el título
 ax.set_xlabel('Región Geográfica', fontsize=12, fontweight='bold')
 ax.set_ylabel('Flujo Promedio (2018-2022) [log scale]', fontsize=12, fontweight='bold')
 ax.set_title('Distribución de Flujos Promedio por Región Geográfica', fontsize=14, fontweight='bold')
 
-# Rotación de las etiquetas del eje x para mejorar la legibilidad
 plt.xticks(rotation=45, ha='right')
 
-# Mejorar la presentación
 sns.despine(trim=True, left=True)
 
-# Mostrar el gráfico
 plt.tight_layout()
 plt.show()
 #%%
-tabla_curada = tabla_curada[~(tabla_curada['IED 2022 (M U$S)'] ==tabla_curada['IED 2022 (M U$S)'].min())]
+'''
+iii) 
+Relación entre el IED de cada país (año 2022 y para todos los países que se tiene información) 
+y la cantidad de sedes en el exterior que tiene Argentina en esos países.
+'''
+tabla_curada = tablaResultado1[~(tablaResultado1['IED 2022 (M U$S)'].isna())]
 
 for i in [3,5,8,9,11]:
+    '''
+    Se tira los paises que tienen solo un punto en el gráfico
+    '''
     tabla_curada = tabla_curada[~(tabla_curada['sedes'] == i)]
-# Configuración de Seaborn para mejorar la estética
+
 sns.set(style="whitegrid")
 
-# Crear la figura y el eje
 plt.figure(figsize=(12, 8))
 
 # Crear el boxplot
 ax = sns.boxplot(x='sedes', y='IED 2022 (M U$S)', data=tabla_curada, palette='viridis')
 
-# Configurar la escala del eje Y para mejorar la visualización
-ax.set_yscale('log')
+ax.set_yscale('log') # escala logarítmica para mejorar la visualización. NOTA: los valores negativos no aparecerán en el gráfico
 
-# Mejorar las etiquetas y el título
-ax.set_xlabel('Number of Embassies', fontsize=12, fontweight='bold')
+ax.set_xlabel('Cantidad de sedes', fontsize=12, fontweight='bold')
 ax.set_ylabel('IED 2022 (M U$S) [log scale]', fontsize=12, fontweight='bold')
-ax.set_title('Relationship between IED 2022 and Number of Argentinian Embassies Abroad', fontsize=14, fontweight='bold')
+ax.set_title('Relacion entre el IED de cada pais y la cantidad de sedes', fontsize=14, fontweight='bold')
 
-# Ajustar las etiquetas del eje x para una mejor presentación
-plt.xticks(rotation=45, ha='right')
+plt.xticks(rotation=0, ha='right')
 
-# Mejorar la presentación desactivando algunos bordes
 sns.despine(trim=True, left=True)
 
-# Mostrar el gráfico
 plt.tight_layout()
 plt.show()
 #%%
-path = r'C:\Users\Luis Quispe\Desktop\Labo_Datos\´TP\TP01-MLJ\TablasLimpias'
+path = r'C:\Users\Luis Quispe\Desktop\TP01-MLJ\TablasLimpias'
 os.chdir(path)
 
 SEDES.to_csv('sedes.csv', index=False)
@@ -529,3 +529,6 @@ tablaResultado1.to_csv(r'.\Anexo\consulta_1.csv',index = False)
 tablaResultado2.to_csv(r'.\Anexo\consulta_2.csv',index = False)
 tablaResultado3.to_csv(r'.\Anexo\consulta_3.csv',index = False)
 tablaResultado4.to_csv(r'.\Anexo\consulta_4.csv',index = False)
+
+first_rows = tablaResultado1.head(13)
+first_rows.to_csv('first_rows.csv', index=False)
