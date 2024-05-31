@@ -276,6 +276,76 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos: {score}")
 #Accuracy con 20 atributos: 0.9885416666666667
 
+#%% 2_e
+"""
+Voy a comparar el ultimo modelo tomando vecinos {k= 5, 10, 15, 20, 50} a ver que sucede
+"""
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
+
+# Ajustamos el modelo KNN
+
+model = KNeighborsClassifier(n_neighbors = 5) # modelo en abstracto
+model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+
+print(f"Accuracy con 20 atributos y 5 vecinos: {score}")
+#Accuracy con 20 atributos y 5 vecinos en el KNN: 0.9885416666666667
+
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
+
+# Ajustamos el modelo KNN
+
+model = KNeighborsClassifier(n_neighbors = 10) # modelo en abstracto
+model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+
+print(f"Accuracy con 20 atributos: y 10 vecinos en el KNN {score}")
+#Accuracy con 20 atributos: y 10 vecinos en el KNN 0.9864583333333333
+
+
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
+
+# Ajustamos el modelo KNN
+
+model = KNeighborsClassifier(n_neighbors = 15) # modelo en abstracto
+model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+
+print(f"Accuracy con 20 atributos y 15 vecinos en el KNN: {score}")
+#Accuracy con 20 atributos y 15 vecinos en el KNN: 0.9864583333333333
+
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
+
+# Ajustamos el modelo KNN
+
+model = KNeighborsClassifier(n_neighbors = 20) # modelo en abstracto
+model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+
+print(f"Accuracy con 20 atributos y 20 vecinos en el KNN: {score}")
+#Accuracy con 20 atributos y 20 vecinos en el KNN: 0.984375
+
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
+
+# Ajustamos el modelo KNN
+
+model = KNeighborsClassifier(n_neighbors = 50) # modelo en abstracto
+model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+
+print(f"Accuracy con 20 atributos y 50 vecinos en el KNN: {score}")
+#Accuracy con 20 atributos y 50 vecinos en el KNN: 0.96875
+
 #%%
 #PUNTO 3 
 data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] == 'I') | (data1[0] == 'O') | (data1[0] == 'U')]
