@@ -2,10 +2,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from sklearn import tree
 import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.neighbors import KNeighborsClassifier
 from scipy.spatial.distance import cdist
+from sklearn.metrics import accuracy_score
+import graphviz
 from sklearn import metrics
 import random
 #%%
@@ -422,11 +425,48 @@ data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] =
 
 X_dev1, X_eval1, y_dev1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
 
+def crear_arbol(profundidad, X, Y):
+    clf_info = tree.DecisionTreeClassifier(max_depth= profundidad)
+    clf_info = clf_info.fit(X, Y)
+    return clf_info
+
+# Range of depths to try
+max_depths = range(1, 11)
+best_depth = 0
+best_accuracy = 0
+best_tree = None
+
+# Train and evaluate trees with different depths
+accuracies = []
+for depth in max_depths:
+    clf = crear_arbol(depth, X_dev1, y_dev1)
+    y_pred = clf.predict(X_eval1)
+    accuracy = accuracy_score(y_eval1, y_pred)
+    accuracies.append(accuracy)
+    
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_depth = depth
+        best_tree = clf
+
+print(f'Best Depth: {best_depth}, Best Accuracy: {best_accuracy}')
+#%%
+# Visualize the best decision tree
+feature_names = X_dev1.columns.tolist()
+class_names = y_dev1.unique().tolist()
+plt.figure(figsize=(20,10))
+tree.plot_tree(best_tree, feature_names=feature_names, class_names=class_names, filled=True, rounded=True, fontsize=1)
+plt.tight_layout()
+plt.show()
 
 
-
-
-
+plt.figure(figsize=(20,10))
+# Plot the accuracies for each depth
+plt.plot(max_depths, accuracies, marker='o')
+plt.xlabel('Tree Depth')
+plt.ylabel('Accuracy')
+plt.title('Decision Tree Depth vs Accuracy')
+plt.show()
 
 
 
