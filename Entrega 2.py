@@ -326,99 +326,39 @@ print(f"Accuracy con 20 atributos: {score}")
 
 #%% 2_e
 """
-Voy a comparar el ultimo modelo tomando vecinos {k= 5, 10, 15, 20, 50} a ver que sucede
+Voy a comparar el ultimo modelo tomando vecinos {k= 2, 5, 10, 15, 20, 50} a ver que sucede
 """
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
-
-model = KNeighborsClassifier(n_neighbors = 2) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos y 2 vecinos: {score}")
-#Accuracy con 20 atributos y 2 vecinos: 0.9864583333333333
-
-
-model = KNeighborsClassifier(n_neighbors = 5) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos y 5 vecinos: {score}")
-#Accuracy con 20 atributos y 5 vecinos en el KNN: 0.9885416666666667
-
-
-model = KNeighborsClassifier(n_neighbors = 10) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos: y 10 vecinos en el KNN {score}")
-#Accuracy con 20 atributos: y 10 vecinos en el KNN 0.9864583333333333
-
-
-
-model = KNeighborsClassifier(n_neighbors = 15) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos y 15 vecinos en el KNN: {score}")
-#Accuracy con 20 atributos y 15 vecinos en el KNN: 0.9864583333333333
-
-
-model = KNeighborsClassifier(n_neighbors = 20) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos y 20 vecinos en el KNN: {score}")
-#Accuracy con 20 atributos y 20 vecinos en el KNN: 0.984375
-
-
-model = KNeighborsClassifier(n_neighbors = 50) # modelo en abstracto
-model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
-
-print(f"Accuracy con 20 atributos y 50 vecinos en el KNN: {score}")
-#Accuracy con 20 atributos y 50 vecinos en el KNN: 0.96875
-#%%
-# Definir los valores de K que se van a probar
 k_values = [2, 5, 10, 15, 20, 50]
-accuracy_train = []
-accuracy_test = []
+accuracy_train6 = []
+accuracy_test6 = []
 
 # Seleccionar los 20 atributos más cercanos al máximo pixel para el promedio
-X_train_caso = X_dev.iloc[:, 396:416]
-X_test_caso = X_eval.iloc[:, 396:416]
+X_train_caso6 = X_dev.iloc[:, 396:416]
+X_test_caso6 = X_eval.iloc[:, 396:416]
 
 # Iterar sobre los valores de K
 for k in k_values:
     # Ajustar el modelo KNN
     model = KNeighborsClassifier(n_neighbors=k)
-    model.fit(X_train_caso, y_dev)
+    model.fit(X_train_caso6, y_dev)
     
     # Predecir y calcular el accuracy para los datos de entrenamiento
-    y_train_pred = model.predict(X_train_caso)
-    train_accuracy = accuracy_score(y_dev, y_train_pred)
-    accuracy_train.append(train_accuracy)
+    Y_pred_caso6 = model.predict(X_train_caso6)
+    train_accuracy = accuracy_score(y_dev, Y_pred_caso6)
+    accuracy_train6.append(train_accuracy)
     
     # Predecir y calcular el accuracy para los datos de prueba
-    y_test_pred = model.predict(X_test_caso)
-    test_accuracy = accuracy_score(y_eval, y_test_pred)
-    accuracy_test.append(test_accuracy)
+    Y_pred_caso6 = model.predict(X_test_caso6)
+    test_accuracy6 = accuracy_score(y_eval, Y_pred_caso6)
+    accuracy_test6.append(test_accuracy6)
 
 # Crear la figura
 plt.figure(figsize=(10, 6))
 
 # Graficar los datos
-plt.plot(k_values, accuracy_train, label='Train Accuracy', marker='o')
-plt.plot(k_values, accuracy_test, label='Test Accuracy', marker='o')
+plt.plot(k_values, accuracy_train6, label='Train Accuracy', marker='o')
+plt.plot(k_values, accuracy_test6, label='Test Accuracy', marker='o')
 
 # Añadir etiquetas y título
 plt.xlabel('Valores de K')
@@ -432,86 +372,46 @@ plt.xticks(range(0, max(k_values)+1, 5))  # Ajustar la grilla del eje X a interv
 plt.show()
 
 # Mostrar los valores de accuracy para train y test
-print(f"Accuracy de entrenamiento: {accuracy_train}")
-print(f"Accuracy de prueba: {accuracy_test}")
+print(f"Accuracy de entrenamiento con 20 atributos con k=2: {accuracy_train6[0]}")
+print(f"Accuracy de entrenamiento con 20 atributos con k=5: {accuracy_train6[1]}")
+print(f"Accuracy de entrenamiento con 20 atributos con k=10: {accuracy_train6[2]}")
+print(f"Accuracy de entrenamiento con 20 atributos con k=20: {accuracy_train6[3]}")
+print(f"Accuracy de entrenamiento con 20 atributos con k=50: {accuracy_train6[4]}")
+print(f"Accuracy de prueba: {accuracy_test6}")
 #%%
-###Ahora vamos a tomar los 30 atributos del centro de mi dataframe test (indice 392) e ir variando los k
+"""
+Ahora vamos a tomar 30 atributos  del centro de mi dataframe test (indice 392) e ir 
+tomando vecinos iguales a {k= 2, 5, 10, 15, 20, 50} a ver que sucede
+"""
 
 X_train_caso7 = X_dev.iloc[:, 377:407]
 X_test_caso7 = X_eval.iloc[:, 377:407]
 
-# Ajustamos el modelo KNN
-model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
-model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+k_values = [2, 5, 10, 15, 20, 50]
+accuracy_train7 = []
+accuracy_test7 = []
 
-print(f"Accuracy con 30 atributos y 3 vecinos en el KNN: {score}")
-#Accuracy con 30 atributos y 3 vecinos en el KNN: 0.9864583333333333
 
-model = KNeighborsClassifier(n_neighbors = 5) # modelo en abstracto
-model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
-
-print(f"Accuracy con 30 atributos y 5 vecinos en el KNN: {score}")
-#Accuracy con 30 atributos y 5 vecinos en el KNN: 0.9854166666666667
-
-model = KNeighborsClassifier(n_neighbors = 10) # modelo en abstracto
-model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
-
-print(f"Accuracy con 30 atributos y 10 vecinos en el KNN: {score}")
-#Accuracy con 30 atributos y 10 vecinos en el KNN: 0.9833333333333333
-
-model = KNeighborsClassifier(n_neighbors = 20) # modelo en abstracto
-model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
-
-print(f"Accuracy con 30 atributos y 20 vecinos en el KNN: {score}")
-#Accuracy con 30 atributos y 20 vecinos en el KNN: 0.9791666666666666
-
-model = KNeighborsClassifier(n_neighbors = 50) # modelo en abstracto
-model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
-Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
-
-print(f"Accuracy con 30 atributos y 50 vecinos en el KNN: {score}")
-#Accuracy con 30 atributos y 50 vecinos en el KNN: 0.9635416666666666
-#%%
-# Definir los valores de K que se van a probar
-k_values = [3, 5, 10, 15, 20, 50]
-accuracy_train = []
-accuracy_test = []
-
-# Seleccionar los 20 atributos más cercanos al máximo pixel para el promedio
-X_train_caso = X_dev.iloc[:, 377:407]
-X_test_caso = X_eval.iloc[:, 377:407]
-
-# Iterar sobre los valores de K
 for k in k_values:
     # Ajustar el modelo KNN
     model = KNeighborsClassifier(n_neighbors=k)
-    model.fit(X_train_caso, y_dev)
+    model.fit(X_train_caso7, y_dev)
     
     # Predecir y calcular el accuracy para los datos de entrenamiento
-    y_train_pred = model.predict(X_train_caso)
-    train_accuracy = accuracy_score(y_dev, y_train_pred)
-    accuracy_train.append(train_accuracy)
+    Y_pred_caso7 = model.predict(X_train_caso7)
+    train_accuracy7 = accuracy_score(y_dev, Y_pred_caso7)
+    accuracy_train7.append(train_accuracy7)
     
     # Predecir y calcular el accuracy para los datos de prueba
-    y_test_pred = model.predict(X_test_caso)
-    test_accuracy = accuracy_score(y_eval, y_test_pred)
-    accuracy_test.append(test_accuracy)
-
+    Y_pred_caso7 = model.predict(X_test_caso7)
+    test_accuracy7 = accuracy_score(y_eval, Y_pred_caso7)
+    accuracy_test7.append(test_accuracy7)
 # Crear la figura
 plt.figure(figsize=(10, 6))
 
 # Graficar los datos
-plt.plot(k_values, accuracy_train, label='Train Accuracy', marker='o')
-plt.plot(k_values, accuracy_test, label='Test Accuracy', marker='o')
+plt.plot(k_values, accuracy_train7, label='Train Accuracy', marker='o')
+plt.plot(k_values, accuracy_test7, label='Test Accuracy', marker='o')
 
 # Añadir etiquetas y título
 plt.xlabel('Valores de K')
@@ -525,8 +425,12 @@ plt.xticks(range(0, max(k_values)+1, 5))  # Ajustar la grilla del eje X a interv
 plt.show()
 
 # Mostrar los valores de accuracy para train y test
-print(f"Accuracy de entrenamiento: {accuracy_train}")
-print(f"Accuracy de prueba: {accuracy_test}")
+print(f"Accuracy de entrenamiento con 30 atributos con k=2: {accuracy_train7[0]}")
+print(f"Accuracy de entrenamiento con 30 atributos con k=5: {accuracy_train7[1]}")
+print(f"Accuracy de entrenamiento con 30 atributos con k=10: {accuracy_train7[2]}")
+print(f"Accuracy de entrenamiento con 30 atributos con k=20: {accuracy_train7[3]}")
+print(f"Accuracy de entrenamiento con 30 atributos con k=50: {accuracy_train7[4]}")
+print(f"Accuracy de prueba: {accuracy_test7}")
 
 #%%
 #PUNTO 3 
