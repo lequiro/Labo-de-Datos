@@ -209,11 +209,6 @@ data1_frame_la = data1[(data1[0] == 'L') | (data1[0] == 'A')]
 cantidad_por_letra = data1_frame_la[0].value_counts()
 X_dev, X_eval, y_dev, y_eval = train_test_split(data1_frame_la.drop(0, axis =1),data1_frame_la[0],random_state=1,test_size=0.2)
 
-model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
-model.fit(X_dev, y_dev) # entreno el modelo con los datos X e Y
-Y_pred = model.predict(X_eval) # me fijo qué clases les asigna el modelo a mis datos
-metrics.accuracy_score(y_eval, Y_pred)
-
 #%% PUNTO 2_D
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
@@ -347,10 +342,6 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos y 2 vecinos: {score}")
 #Accuracy con 20 atributos y 2 vecinos: 0.9864583333333333
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 5) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
@@ -360,10 +351,6 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos y 5 vecinos: {score}")
 #Accuracy con 20 atributos y 5 vecinos en el KNN: 0.9885416666666667
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 10) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
@@ -374,10 +361,6 @@ print(f"Accuracy con 20 atributos: y 10 vecinos en el KNN {score}")
 #Accuracy con 20 atributos: y 10 vecinos en el KNN 0.9864583333333333
 
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 15) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
@@ -387,10 +370,6 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos y 15 vecinos en el KNN: {score}")
 #Accuracy con 20 atributos y 15 vecinos en el KNN: 0.9864583333333333
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 20) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
@@ -400,10 +379,6 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos y 20 vecinos en el KNN: {score}")
 #Accuracy con 20 atributos y 20 vecinos en el KNN: 0.984375
 
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
-# Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 50) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
@@ -413,11 +388,51 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 20 atributos y 50 vecinos en el KNN: {score}")
 #Accuracy con 20 atributos y 50 vecinos en el KNN: 0.96875
 
-###Vamos a tomar otroa atributos e ir variando k
+###Ahora vamos a tomar los 30 atributos del centro de mi dataframe test (indice 392) e ir variando los k
 
+X_train_caso7 = X_dev.iloc[:, 377:407]
+X_test_caso7 = X_eval.iloc[:, 377:407]
 
+# Ajustamos el modelo KNN
+model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
 
+print(f"Accuracy con 30 atributos y 3 vecinos en el KNN: {score}")
+#Accuracy con 30 atributos y 3 vecinos en el KNN: 0.9864583333333333
 
+model = KNeighborsClassifier(n_neighbors = 5) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+
+print(f"Accuracy con 30 atributos y 5 vecinos en el KNN: {score}")
+#Accuracy con 30 atributos y 5 vecinos en el KNN: 0.9854166666666667
+
+model = KNeighborsClassifier(n_neighbors = 10) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+
+print(f"Accuracy con 30 atributos y 10 vecinos en el KNN: {score}")
+#Accuracy con 30 atributos y 10 vecinos en el KNN: 0.9833333333333333
+
+model = KNeighborsClassifier(n_neighbors = 20) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+
+print(f"Accuracy con 30 atributos y 20 vecinos en el KNN: {score}")
+#Accuracy con 30 atributos y 20 vecinos en el KNN: 0.9791666666666666
+
+model = KNeighborsClassifier(n_neighbors = 50) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7= model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+
+print(f"Accuracy con 30 atributos y 50 vecinos en el KNN: {score}")
+#Accuracy con 30 atributos y 50 vecinos en el KNN: 0.9635416666666666
 
 #%%
 #PUNTO 3 
