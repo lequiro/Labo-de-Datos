@@ -120,7 +120,56 @@ plt.ylabel('Letra')
 plt.show()
 
 #%%
-#PTO 1C
+#NUEVO PTO 1C
+from scipy.spatial.distance import euclidean
+
+for i in range(len(data)):
+    row = data.iloc[i].drop(0).values
+    letra = data.iloc[i][0]
+    image_array = np.array(row).astype(np.float32)
+    transformed_image = flip_rotate(image_array)
+    images.append(transformed_image)
+    labels.append(letra)
+
+images = np.array(images)
+labels = np.array(labels)
+
+# Letras seleccionadas para el análisis
+selected_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+average_images = {}
+avg_distances = {}
+
+# Calcular el promedio de las imágenes y la desviación estándar para cada letra seleccionada
+for letter in selected_letters:
+    images_letter = images[labels == letter]
+    avg_image = np.mean(images_letter, axis=0)
+    average_images[letter] = avg_image
+    
+    # Calcular las distancias de cada imagen de la letra al promedio
+    distances = [euclidean(img.flatten(), avg_image.flatten()) for img in images_letter]
+    avg_distance = np.mean(distances)
+    avg_distances[letter] = avg_distance
+
+# Configurar el gráfico de barras
+plt.figure(figsize=(10, 6))
+bars = plt.bar(avg_distances.keys(), avg_distances.values(), color='skyblue')
+
+# Añadir los valores de desviación estándar encima de cada barra
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.4f}', ha='center', va='bottom')
+    
+# Añadir una línea vertical en la distancia promedio especificada
+plt.axhline(y=1799, color='r', linestyle='--', label='Promedio = 1799')
+plt.legend()
+plt.xlabel('Letras')
+plt.ylabel('Distancia Promedio')
+plt.title('Distancia Promedio de cada tipo de letra a su promedio')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.show()
+#%%
+#VIEJO C
 # Dictionary to store standard deviations for each letter
 std_dev_per_letter = {}
 
