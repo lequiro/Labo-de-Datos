@@ -387,7 +387,54 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso6)
 
 print(f"Accuracy con 20 atributos y 50 vecinos en el KNN: {score}")
 #Accuracy con 20 atributos y 50 vecinos en el KNN: 0.96875
+#%%
+# Definir los valores de K que se van a probar
+k_values = [2, 5, 10, 15, 20, 50]
+accuracy_train = []
+accuracy_test = []
 
+# Seleccionar los 20 atributos más cercanos al máximo pixel para el promedio
+X_train_caso = X_dev.iloc[:, 396:416]
+X_test_caso = X_eval.iloc[:, 396:416]
+
+# Iterar sobre los valores de K
+for k in k_values:
+    # Ajustar el modelo KNN
+    model = KNeighborsClassifier(n_neighbors=k)
+    model.fit(X_train_caso, y_dev)
+    
+    # Predecir y calcular el accuracy para los datos de entrenamiento
+    y_train_pred = model.predict(X_train_caso)
+    train_accuracy = accuracy_score(y_dev, y_train_pred)
+    accuracy_train.append(train_accuracy)
+    
+    # Predecir y calcular el accuracy para los datos de prueba
+    y_test_pred = model.predict(X_test_caso)
+    test_accuracy = accuracy_score(y_eval, y_test_pred)
+    accuracy_test.append(test_accuracy)
+
+# Crear la figura
+plt.figure(figsize=(10, 6))
+
+# Graficar los datos
+plt.plot(k_values, accuracy_train, label='Train Accuracy', marker='o')
+plt.plot(k_values, accuracy_test, label='Test Accuracy', marker='o')
+
+# Añadir etiquetas y título
+plt.xlabel('Valores de K')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Valores de K')
+plt.legend()
+plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)
+plt.xticks(range(0, max(k_values)+1, 5))  # Ajustar la grilla del eje X a intervalos de 5
+
+# Mostrar el gráfico
+plt.show()
+
+# Mostrar los valores de accuracy para train y test
+print(f"Accuracy de entrenamiento: {accuracy_train}")
+print(f"Accuracy de prueba: {accuracy_test}")
+#%%
 ###Ahora vamos a tomar los 30 atributos del centro de mi dataframe test (indice 392) e ir variando los k
 
 X_train_caso7 = X_dev.iloc[:, 377:407]
@@ -433,6 +480,53 @@ score = metrics.accuracy_score(y_eval, Y_pred_caso7)
 
 print(f"Accuracy con 30 atributos y 50 vecinos en el KNN: {score}")
 #Accuracy con 30 atributos y 50 vecinos en el KNN: 0.9635416666666666
+#%%
+# Definir los valores de K que se van a probar
+k_values = [3, 5, 10, 15, 20, 50]
+accuracy_train = []
+accuracy_test = []
+
+# Seleccionar los 20 atributos más cercanos al máximo pixel para el promedio
+X_train_caso = X_dev.iloc[:, 377:407]
+X_test_caso = X_eval.iloc[:, 377:407]
+
+# Iterar sobre los valores de K
+for k in k_values:
+    # Ajustar el modelo KNN
+    model = KNeighborsClassifier(n_neighbors=k)
+    model.fit(X_train_caso, y_dev)
+    
+    # Predecir y calcular el accuracy para los datos de entrenamiento
+    y_train_pred = model.predict(X_train_caso)
+    train_accuracy = accuracy_score(y_dev, y_train_pred)
+    accuracy_train.append(train_accuracy)
+    
+    # Predecir y calcular el accuracy para los datos de prueba
+    y_test_pred = model.predict(X_test_caso)
+    test_accuracy = accuracy_score(y_eval, y_test_pred)
+    accuracy_test.append(test_accuracy)
+
+# Crear la figura
+plt.figure(figsize=(10, 6))
+
+# Graficar los datos
+plt.plot(k_values, accuracy_train, label='Train Accuracy', marker='o')
+plt.plot(k_values, accuracy_test, label='Test Accuracy', marker='o')
+
+# Añadir etiquetas y título
+plt.xlabel('Valores de K')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Valores de K')
+plt.legend()
+plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)
+plt.xticks(range(0, max(k_values)+1, 5))  # Ajustar la grilla del eje X a intervalos de 5
+
+# Mostrar el gráfico
+plt.show()
+
+# Mostrar los valores de accuracy para train y test
+print(f"Accuracy de entrenamiento: {accuracy_train}")
+print(f"Accuracy de prueba: {accuracy_test}")
 
 #%%
 #PUNTO 3 
