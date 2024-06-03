@@ -209,30 +209,57 @@ data1_frame_la = data1[(data1[0] == 'L') | (data1[0] == 'A')]
 cantidad_por_letra = data1_frame_la[0].value_counts()
 X_dev, X_eval, y_dev, y_eval = train_test_split(data1_frame_la.drop(0, axis =1),data1_frame_la[0],random_state=1,test_size=0.2)
 
-#%% PUNTO 2_D
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
-
-#Voy a buscar los indices donde hay un maximo en alguna clase para A y para L
-data1_L = data1_frame_la[data1_frame_la[0] == 'L']
-data1_A = data1_frame_la[data1_frame_la[0] == 'A']
-maximo_L = data1_L.drop(data1_L.columns[0], axis = 1).max().max()
-maximo_A = data1_A.drop(data1_A.columns[0], axis = 1).max().max()
-
-print(f"El maximo pixel entre las clases de la letra L es: {maximo_L}")
-print(f"El maximo pixel entre las clases de la letra A es: {maximo_A}")
-
-indices_A_maximo = data1_frame_la[(data1_frame_la[data1_frame_la.columns[0]] == 'A') & (data1_frame_la == 255).any(axis=1)].index
-print(f"El maximo pixel entre las clases de la letra A se encuentra en los indices: {indices_A_maximo}")
-
-indices_L_maximo = data1_frame_la[(data1_frame_la[data1_frame_la.columns[0]] == 'L') & (data1_frame_la == 255).any(axis=1)].index
-print(f"El maximo pixel entre las clases de la letra L se encuentra en los indices: {indices_L_maximo}")
+#%% PUNTO 2_D : PARA EL MAXIMO VALOR DE DISTANCIA
+promedios_L = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "A"].loc[:,1:], axis=0)
+promedios_A = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "L"].loc[:,1:], axis =0)
 
 
-# Seleccionamos 3 atributos mas cercanos el maximo pixel para A(en el indice 69 hay un max)
+distancia = np.argmax(np.abs(promedios_L - promedios_A))
+distancia_max = np.max(np.abs(promedios_L-promedios_A))
+# 188.66833333333335 es la distancia maxima entre L y A
+print(distancia)
+#439 es la columna donde se da esta distancia maxima
+valores_L = data1_frame_la[data1_frame_la.loc[:,0] == "L"].iloc[:,distancia]
+valores_A = data1_frame_la[data1_frame_la.loc[:,0] == "A"].iloc[:,distancia]
 
-X_train_caso1 = X_dev.iloc[:, 68:70]
-X_test_caso1 = X_eval.iloc[:, 68:70]
+#Creamos boxplot
+plt.figure(figsize=(10,6))
+plt.boxplot([valores_L, valores_A], labels = ["L", "A"])
+plt.title(f'Boxplot de la columna {distancia} con distancia máxima')
+plt.xlabel("Categoria")
+plt.ylabel("Valores")
+plt.show()
+#%%
+"""
+Boxplot de los valores de A y de L para las columnas con una distancia entre 150 y 188
+
+"""
+x = np.abs(promedios_L - promedios_A)
+buscador = np.argwhere((x >= 150) & (x <= 188)).flatten()
+
+print(buscador)
+#[[382],[383],[384],[402],[409],[410],[411],[412],[413],[429],[437],[438],[440],[465],[466],[467],[468],[494],[495]]
+
+for valores in buscador:
+    valores_L = data1_frame_la[data1_frame_la.loc[:,0] == "L"].iloc[:,valores]
+    valores_A = data1_frame_la[data1_frame_la.loc[:,0] == "A"].iloc[:,valores]
+
+    plt.figure(figsize=(10,6))
+    plt.boxplot([valores_L, valores_A], labels = ["L", "A"])
+    plt.title(f'Boxplot de la columna: {valores}')
+    plt.xlabel("Categoria")
+    plt.ylabel("Valores")
+    plt.show()
+
+#%%
+"""
+punto 2 D actualizado usando las maximas distancias entre A y L
+"""
+#las maximas distancias se encuentran en las columnas [[382],[383],[384],[402],[409],[410],[411]
+#,[412],[413],[429],[437],[438],[439](maximo),[440],[465],[466],[467],[468],[494],[495]]
+
+X_train_caso1 = X_dev.iloc[:, 438:440]
+X_test_caso1 = X_eval.iloc[:, 438:440]
 # Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
@@ -241,32 +268,21 @@ Y_pred_caso1 = model.predict(X_test_caso1) # me fijo qué clases les asigna el m
 score = metrics.accuracy_score(y_eval, Y_pred_caso1)
 
 print(f"Accuracy con 3 atributos: {score}")
-#Accuracy con 3 atributos: 0.53125
+#Accuracy con 3 atributos: 0.9583333333333334
 
-#Seleccionamos 3 atributos mas cercanos el maximo pixel para L (en el indice 708 hay un max)
-X_train_caso2 = X_dev.iloc[:, 707:709]
-X_test_caso2 = X_eval.iloc[:, 707:709]
-
+X_train_caso2 = X_dev.iloc[:, 382:384]
+X_test_caso2 = X_eval.iloc[:, 382:384]
 # Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso2, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso2 = model.predict(X_test_caso2) # me fijo qué clases les asigna el modelo a mis datos
 score = metrics.accuracy_score(y_eval, Y_pred_caso2)
-
 print(f"Accuracy con 3 atributos: {score}")
-#Accuracy con 3 atributos: 0.5354166666666667
+#Accuracy con 3 atributos: 0.9302083333333333
 
-#Voy a probar tomando el maximo pero del promedio entre las L y las A juntas
-promedio_LA = data1_frame_la.drop(columns=[0]).mean()
-#Encuetro el indice que contiene al maximo
-indice_maximo = promedio_LA.idxmax()
-print(f"El pixel de mayor promedio se encuentra en la posicion: {indice_maximo}")
-#El pixel de mayor promedio se encuentra en la posicion: 406
-
-#Voy a entrenar tomando los 3 atributos mas cercanos al maximo global
-X_train_caso3 = X_dev.iloc[:, 405:407]
-X_test_caso3 = X_eval.iloc[:, 405:407]
+X_train_caso3 = X_dev.iloc[:, [402,409,410]]
+X_test_caso3 = X_eval.iloc[:, [402,409,410]]
 
 # Ajustamos el modelo KNN
 
@@ -276,15 +292,10 @@ Y_pred_caso3 = model.predict(X_test_caso3) # me fijo qué clases les asigna el m
 score = metrics.accuracy_score(y_eval, Y_pred_caso3)
 
 print(f"Accuracy con 3 atributos: {score}")
-#Accuracy con 3 atributos: 0.75
+#Accuracy con 3 atributos: 0.9427083333333334
 
-""" Como el modelo con mayor accuracy fue el tercero(tomando 3 atributos cercanos al maximo del promedio de L y A), 
-voy a usar  este maximo pero tomando primero los 7 mas cercanos, los 10 mas cercanos y los 20 mas cercanos
-(el maximo se encuentra en el indice 406) """
-
-# Seleccionamos 7 atributos mas cercanos el maximo pixel para el promedio
-X_train_caso4 = X_dev.iloc[:, 402:409]
-X_test_caso4 = X_eval.iloc[:, 402:409]
+X_train_caso4 = X_dev.iloc[:, [468,494,495]]
+X_test_caso4 = X_eval.iloc[:, [468,494,495]]
 
 # Ajustamos el modelo KNN
 
@@ -293,12 +304,15 @@ model.fit(X_train_caso4, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso4 = model.predict(X_test_caso4) # me fijo qué clases les asigna el modelo a mis datos
 score = metrics.accuracy_score(y_eval, Y_pred_caso4)
 
-print(f"Accuracy con 7 atributos: {score}")
-#Accuracy con 7 atributos: 0.88125
+print(f"Accuracy con 3 atributos: {score}")
+#Accuracy con 3 atributos: 0.9635416666666666
 
-# Seleccionamos 10 atributos mas cercanos el maximo pixel para el promedio
-X_train_caso5 = X_dev.iloc[:, 401:411]
-X_test_caso5 = X_eval.iloc[:, 401:411]
+"""
+Ahora voy a tomar probar tomando mas cantidad de atributos, primero voy a tomar 5, luego 10 y finalmente
+voy a tomar 15
+"""
+X_train_caso5 = X_dev.iloc[:, [382,383,384,402,409]]
+X_test_caso5 = X_eval.iloc[:, [382,383,384,402,409]]
 
 # Ajustamos el modelo KNN
 
@@ -306,27 +320,92 @@ model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso5, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso5 = model.predict(X_test_caso5) # me fijo qué clases les asigna el modelo a mis datos
 score = metrics.accuracy_score(y_eval, Y_pred_caso5)
+print(f"Accuracy con 5 atributos: {score}")
+#Accuracy con 5 atributos: 0.965625
 
-print(f"Accuracy con 10 atributos: {score}")
-#Accuracy con 10 atributos: 0.9270833333333334
-
-# Seleccionamos 20 atributos mas cercanos el maximo pixel para el promedio
-X_train_caso6 = X_dev.iloc[:, 396:416]
-X_test_caso6 = X_eval.iloc[:, 396:416]
-
+X_train_caso6 = X_dev.iloc[:, [409,410,411,412,413,429,437,438,439,440]]
+X_test_caso6 = X_eval.iloc[:, [409,410,411,412,413,429,437,438,439,440]]
+#409],[410],[411]
+#,[412],[413],[429],[437],[438],[439](maximo),[440]
 # Ajustamos el modelo KNN
 
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
 score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+print(f"Accuracy con 10 atributos: {score}")
+#Accuracy con 10 atributos: 0.9822916666666667
 
-print(f"Accuracy con 20 atributos: {score}")
-#Accuracy con 20 atributos: 0.9885416666666667
+X_train_caso7 = X_dev.iloc[:, [410,411,412,413,429,437,438,439,440,465, 466, 467, 468,494,495]]
+X_test_caso7 = X_eval.iloc[:, [410,411,412,413,429,437,438,439,440,465, 466, 467, 468,494,495]]
+# Ajustamos el modelo KNN
 
+model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
+model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
+Y_pred_caso7 = model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
+score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+print(f"Accuracy con 15 atributos: {score}")
+#Accuracy con 15 atributos: 0.984375
+
+#%% Punto D-E 
+"""
+Voy a comparar el ultimo modelo que tiene 20 atributos de distancia maxima en promedio entre L y A
+tomando vecinos {k= 2, 5, 10, 15, 20, 50} a ver que sucede
+"""
+
+k_values = [2, 5, 10, 15, 20, 50]
+accuracy_train7 = []
+accuracy_test7 = []
+
+X_train_caso7 = X_dev.iloc[:, [410,411,412,413,429,437,438,439,440,465, 466, 467, 468,494,495]]
+X_test_caso7 = X_eval.iloc[:, [410,411,412,413,429,437,438,439,440,465, 466, 467, 468,494,495]]
+
+# Iterar sobre los valores de K
+for k in k_values:
+    # Ajustar el modelo KNN
+    model = KNeighborsClassifier(n_neighbors=k)
+    model.fit(X_train_caso7, y_dev)
+    
+    # Predecir y calcular el accuracy para los datos de entrenamiento
+    Y_pred_caso7 = model.predict(X_train_caso7)
+    train_accuracy = accuracy_score(y_dev, Y_pred_caso7)
+    accuracy_train7.append(train_accuracy)
+    
+    # Predecir y calcular el accuracy para los datos de prueba
+    Y_pred_caso7 = model.predict(X_test_caso7)
+    test_accuracy7 = accuracy_score(y_eval, Y_pred_caso7)
+    accuracy_test7.append(test_accuracy7)
+
+# Crear la figura
+plt.figure(figsize=(10, 6))
+
+# Graficar los datos
+plt.plot(k_values, accuracy_train7, label='Train Accuracy', marker='o')
+plt.plot(k_values, accuracy_test7, label='Test Accuracy', marker='o')
+
+# Añadir etiquetas y título
+plt.xlabel('Valores de K')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Valores de K')
+plt.legend()
+plt.grid(True, which='both', axis='both', linestyle='--', linewidth=0.5)
+plt.xticks(range(0, max(k_values)+1, 5))  # Ajustar la grilla del eje X a intervalos de 5
+
+# Mostrar el gráfico
+plt.show()
+
+# Mostrar los valores de accuracy para train y test
+print(f"Accuracy de entrenamiento con 15 atributos con k=2: {accuracy_train7[0]}")
+print(f"Accuracy de entrenamiento con 15 atributos con k=5: {accuracy_train7[1]}")
+print(f"Accuracy de entrenamiento con 15 atributos con k=10: {accuracy_train7[2]}")
+print(f"Accuracy de entrenamiento con 15 atributos con k=20: {accuracy_train7[3]}")
+print(f"Accuracy de entrenamiento con 15 atributos con k=50: {accuracy_train7[4]}")
+print(f"Accuracy de prueba: {accuracy_test7}")
 #%% 2_e
 """
-Voy a comparar el ultimo modelo tomando vecinos {k= 2, 5, 10, 15, 20, 50} a ver que sucede
+Voy a comparar el ultimo modelo tomando vecinos {k= 2, 5, 10, 15, 20, 50} a ver que sucede.
+NO BORRE LA PARTE ESTA VIEJA PORQUE HABRIA QUE ANALIZAR EL GRAFICO, SIENTO QUE ESTE ES MAS LINDO Y NO SE
+LA RAZON
 """
 
 k_values = [2, 5, 10, 15, 20, 50]
