@@ -147,22 +147,29 @@ for letter in selected_letters:
     avg_distance = np.mean(distances)
     avg_distances[letter] = avg_distance
 
+# Encontrar la distancia mínima y máxima
+min_distance = min(avg_distances.values())
+max_distance = max(avg_distances.values())
+
+# Normalizar las distancias promedio
+normalized_distances = {letter: (distance - min_distance) / (max_distance - min_distance) for letter, distance in avg_distances.items()}
+
 # Configurar el gráfico de barras
-plt.figure(figsize=(17.28, 8.1))
-bars = plt.bar(avg_distances.keys(), avg_distances.values(), color='skyblue')
+plt.figure(figsize=(10, 6))
+bars = plt.bar(normalized_distances.keys(), normalized_distances.values(), color='skyblue')
 
-# Añadir los valores de desviación estándar encima de cada barra
-
+# Añadir los valores normalizados encima de cada barra
 for bar in bars:
     height = bar.get_height()
     plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.4f}', ha='center', va='bottom')
     
-# Añadir una línea vertical en la distancia promedio especificada
-plt.axhline(y=1799, color='r', linestyle='--', label='Promedio = 1799')
+# Añadir una línea vertical en la distancia promedio especificada (normalizada)
+normalized_threshold = (1799 - min_distance) / (max_distance - min_distance)
+plt.axhline(y=normalized_threshold, color='r', linestyle='--', label=f'Promedio normalizado = {normalized_threshold:.4f}')
 plt.legend()
 plt.xlabel('Letras')
-plt.ylabel('Distancia Promedio')
-plt.title('Distancia Promedio de cada tipo de letra a su promedio')
+plt.ylabel('Distancia Promedio Normalizada')
+plt.title('Distancia Promedio Normalizada de cada tipo de letra a su promedio')
 plt.xticks(rotation=90)
 plt.tight_layout()
 plt.show()
