@@ -1,16 +1,21 @@
+"""
+Trabajo Práctico 01
+Materia: Laboratorio de datos - FCEyN - UBA
+Integrantes: Otermín Juana, Quispe Rojas Luis Enrique , Vilcovsky Maia
+
+Fecha  : 2024-06-04
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from sklearn import tree
 import seaborn as sns
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.neighbors import KNeighborsClassifier
 from scipy.spatial.distance import cdist
-from sklearn.metrics import accuracy_score
-import graphviz
-from sklearn import metrics
-import random
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay,accuracy_score, precision_score, recall_score, f1_score
+from scipy.spatial.distance import euclidean
 #%%
 #Esto te abre los gráficos en una ventana aparte (CORRERLO ES OPCIONAL)
 from IPython import get_ipython
@@ -18,10 +23,8 @@ get_ipython().run_line_magic('matplotlib', 'qt5')
 
 path= r'C:\Users\Luis Quispe\Desktop\Labo_Datos\TP02\Archivos TP-02-20240527'
 os.chdir(path)
-
 #%%
 data = pd.read_csv("emnist_letters_tp.csv", header= None)
-
 #%%
 #FUNCIONES
 def flip_rotate(image):
@@ -35,6 +38,12 @@ def flip_rotate(image):
     image = np.fliplr(image)
     image = np.rot90(image)
     return image
+
+def crear_arbol(profundidad, X, Y):
+    clf_info = DecisionTreeClassifier(max_depth=profundidad)
+    clf_info = clf_info.fit(X, Y)
+    return clf_info
+
 #%%
 #esta parte rota y flipea todas las letras en el data frame
 labels = data.iloc[:, 0].values
@@ -43,20 +52,17 @@ images = data.iloc[:, 1:].values
 transformed_images = np.array([flip_rotate(image) for image in images])
 flattened_images = transformed_images.reshape(transformed_images.shape[0], -1)
 data1 = pd.DataFrame(np.column_stack((labels, flattened_images)))
-#%%
+
 #cuento cantidad de letras
 cantidad_letras = data1[0].value_counts()
-# indices = data1[0][data1[0] == 'M']
 #%%
 matriz_valores = np.array(data1.drop(0, axis=1).astype(float))
-
-
 vec_promedio = np.mean(matriz_valores, axis=0)
-
 image_vec_promedio = vec_promedio.reshape(28, 28)
 
+plt.figure(figsize=(17.28, 8.1))
 plt.imshow(image_vec_promedio)
-plt.title("Average Image")
+plt.title("Promedio de todas las letras")
 plt.show()
 #%%
 # Encontrar las columnas con valores promedio entre 0 y 1
@@ -66,6 +72,7 @@ columnas_menores_1 = np.where((vec_promedio >= 0) & (vec_promedio <= 1))[0]
 imagen_vec_promedio = vec_promedio.reshape(28, 28)
 
 # Visualizar la imagen promedio con recuadros en las columnas de bajo valor
+plt.figure(figsize=(17.28, 8.1))
 plt.imshow(imagen_vec_promedio, cmap='viridis')
 plt.title("Promedio de todas las letras")
 
@@ -115,7 +122,7 @@ min_distance = np.min(distances)
 max_distance = np.max(distances)
 distances_normalized = (distances - min_distance) / (max_distance - min_distance)
 
-plt.figure(figsize=(10, 8))
+plt.figure(figsize=(17.28, 8.1))
 sns.heatmap(distances_normalized, xticklabels=selected_letters, yticklabels=selected_letters, cmap='viridis', annot=True, fmt=".2f")
 plt.title('Mapa de calor de las distancias normalizadas entre imágenes promedio de letras seleccionadas')
 plt.xlabel('Letra')
@@ -124,19 +131,6 @@ plt.show()
 
 #%%
 #NUEVO PTO 1C
-from scipy.spatial.distance import euclidean
-
-for i in range(len(data)):
-    row = data.iloc[i].drop(0).values
-    letra = data.iloc[i][0]
-    image_array = np.array(row).astype(np.float32)
-    transformed_image = flip_rotate(image_array)
-    images.append(transformed_image)
-    labels.append(letra)
-
-images = np.array(images)
-labels = np.array(labels)
-
 # Letras seleccionadas para el análisis
 selected_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 average_images = {}
@@ -154,10 +148,11 @@ for letter in selected_letters:
     avg_distances[letter] = avg_distance
 
 # Configurar el gráfico de barras
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(17.28, 8.1))
 bars = plt.bar(avg_distances.keys(), avg_distances.values(), color='skyblue')
 
 # Añadir los valores de desviación estándar encima de cada barra
+
 for bar in bars:
     height = bar.get_height()
     plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.4f}', ha='center', va='bottom')
@@ -170,37 +165,6 @@ plt.ylabel('Distancia Promedio')
 plt.title('Distancia Promedio de cada tipo de letra a su promedio')
 plt.xticks(rotation=90)
 plt.tight_layout()
-plt.show()
-#%%
-#VIEJO C
-# Dictionary to store standard deviations for each letter
-std_dev_per_letter = {}
-
-# Loop through each letter
-for letter in data1[0].unique():
-    # Get vectors for the current letter
-    vectors_letter = data1[data1[0] == letter].drop(0, axis=1).astype(float)
-    
-    # Calculate distances for the current letter
-    distances_letter = cdist(vectors_letter, vectors_letter, metric='euclidean')
-    
-    # Calculate standard deviation for the distances
-    std_dev = np.std(distances_letter)
-    
-    # Store standard deviation in the dictionary
-    std_dev_per_letter[letter] = std_dev
-
-# Create lists to store letters and their corresponding standard deviations
-letters = list(std_dev_per_letter.keys())
-std_devs = list(std_dev_per_letter.values())
-
-# Plotting the bar plot
-plt.figure(figsize=(10, 6))
-plt.bar(letters, std_devs, color='skyblue')
-plt.xlabel('Letter')
-plt.ylabel('Standard Deviation')
-plt.title('Standard Deviation of Distances for Each Letter')
-plt.xticks(rotation=45)
 plt.show()
 
 #%%
@@ -223,7 +187,7 @@ valores_L = data1_frame_la[data1_frame_la.loc[:,0] == "L"].iloc[:,distancia]
 valores_A = data1_frame_la[data1_frame_la.loc[:,0] == "A"].iloc[:,distancia]
 
 #Creamos boxplot
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(17.28, 8.1))
 plt.boxplot([valores_L, valores_A], labels = ["L", "A"])
 plt.title(f'Boxplot de la columna {distancia} con distancia máxima')
 plt.xlabel("Categoria")
@@ -244,7 +208,7 @@ for valores in buscador:
     valores_L = data1_frame_la[data1_frame_la.loc[:,0] == "L"].iloc[:,valores]
     valores_A = data1_frame_la[data1_frame_la.loc[:,0] == "A"].iloc[:,valores]
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(17.28, 8.1))
     plt.boxplot([valores_L, valores_A], labels = ["L", "A"])
     plt.title(f'Boxplot de la columna: {valores}')
     plt.xlabel("Categoria")
@@ -265,7 +229,7 @@ X_test_caso1 = X_eval.iloc[:, 438:440]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso1, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso1 = model.predict(X_test_caso1) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso1)
+score = accuracy_score(y_eval, Y_pred_caso1)
 
 print(f"Accuracy con 3 atributos: {score}")
 #Accuracy con 3 atributos: 0.9583333333333334
@@ -277,7 +241,7 @@ X_test_caso2 = X_eval.iloc[:, 382:384]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso2, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso2 = model.predict(X_test_caso2) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso2)
+score = accuracy_score(y_eval, Y_pred_caso2)
 print(f"Accuracy con 3 atributos: {score}")
 #Accuracy con 3 atributos: 0.9302083333333333
 
@@ -289,7 +253,7 @@ X_test_caso3 = X_eval.iloc[:, [402,409,410]]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso3, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso3 = model.predict(X_test_caso3) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso3)
+score = accuracy_score(y_eval, Y_pred_caso3)
 
 print(f"Accuracy con 3 atributos: {score}")
 #Accuracy con 3 atributos: 0.9427083333333334
@@ -302,7 +266,7 @@ X_test_caso4 = X_eval.iloc[:, [468,494,495]]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso4, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso4 = model.predict(X_test_caso4) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso4)
+score = accuracy_score(y_eval, Y_pred_caso4)
 
 print(f"Accuracy con 3 atributos: {score}")
 #Accuracy con 3 atributos: 0.9635416666666666
@@ -319,7 +283,7 @@ X_test_caso5 = X_eval.iloc[:, [382,383,384,402,409]]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso5, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso5 = model.predict(X_test_caso5) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso5)
+score = accuracy_score(y_eval, Y_pred_caso5)
 print(f"Accuracy con 5 atributos: {score}")
 #Accuracy con 5 atributos: 0.965625
 
@@ -332,7 +296,7 @@ X_test_caso6 = X_eval.iloc[:, [409,410,411,412,413,429,437,438,439,440]]
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso6, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso6 = model.predict(X_test_caso6) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso6)
+score = accuracy_score(y_eval, Y_pred_caso6)
 print(f"Accuracy con 10 atributos: {score}")
 #Accuracy con 10 atributos: 0.9822916666666667
 
@@ -343,7 +307,7 @@ X_test_caso7 = X_eval.iloc[:, [410,411,412,413,429,437,438,439,440,465, 466, 467
 model = KNeighborsClassifier(n_neighbors = 3) # modelo en abstracto
 model.fit(X_train_caso7, y_dev) # entreno el modelo con los datos X e Y
 Y_pred_caso7 = model.predict(X_test_caso7) # me fijo qué clases les asigna el modelo a mis datos
-score = metrics.accuracy_score(y_eval, Y_pred_caso7)
+score = accuracy_score(y_eval, Y_pred_caso7)
 print(f"Accuracy con 15 atributos: {score}")
 #Accuracy con 15 atributos: 0.984375
 
@@ -433,7 +397,7 @@ for k in k_values:
     accuracy_test6.append(test_accuracy6)
 
 # Crear la figura
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(17.28, 8.1))
 
 # Graficar los datos
 plt.plot(k_values, accuracy_train6, label='Train Accuracy', marker='o')
@@ -486,7 +450,7 @@ for k in k_values:
     test_accuracy7 = accuracy_score(y_eval, Y_pred_caso7)
     accuracy_test7.append(test_accuracy7)
 # Crear la figura
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(17.28, 8.1))
 
 # Graficar los datos
 plt.plot(k_values, accuracy_train7, label='Train Accuracy', marker='o')
@@ -514,65 +478,83 @@ print(f"Accuracy de prueba: {accuracy_test7}")
 #%%
 #PUNTO 3 
 data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] == 'I') | (data1[0] == 'O') | (data1[0] == 'U')]
-
 X_dev1, X_eval1, y_dev1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
-
-def crear_arbol(profundidad, X, Y):
-    clf_info = tree.DecisionTreeClassifier(max_depth= profundidad)
-    clf_info = clf_info.fit(X, Y)
-    return clf_info
-
-# Range of depths to try
 max_depths = range(1, 11)
-best_depth = 0
-best_accuracy = 0
-best_tree = None
-
-# Train and evaluate trees with different depths
 accuracies = []
+
+
+
 for depth in max_depths:
     clf = crear_arbol(depth, X_dev1, y_dev1)
     y_pred = clf.predict(X_eval1)
     accuracy = accuracy_score(y_eval1, y_pred)
     accuracies.append(accuracy)
-    
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
-        best_depth = depth
-        best_tree = clf
 
-print(f'Best Depth: {best_depth}, Best Accuracy: {best_accuracy}')
+
+accuracy_deltas = np.diff(accuracies)
+elbow_depth = 5
+best_depth = elbow_depth
+best_tree = crear_arbol(best_depth, X_dev1, y_dev1)
+best_accuracy = accuracies[best_depth - 1]
+
+print(f'Elbow Depth: {best_depth}, Accuracy at Elbow: {best_accuracy}')
+
+# Optionally, plot the accuracies to visualize the elbow point
+plt.plot(max_depths, accuracies, marker='o')
+plt.xlabel('Depth of Tree')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Depth of Decision Tree')
+plt.axvline(x=elbow_depth, color='r', linestyle='--')
+plt.show()
 #%%
-# Visualize the best decision tree
+# Visualizing the best tree
 feature_names = X_dev1.columns.tolist()
 class_names = y_dev1.unique().tolist()
-plt.figure(figsize=(20,10))
-tree.plot_tree(best_tree, feature_names=feature_names, class_names=class_names, filled=True, rounded=True, fontsize=1)
-plt.tight_layout()
+param_grid = {
+    'max_depth': [5],
+    'criterion': ['gini', 'entropy']
+}
+
+kf = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=10, scoring='accuracy')
+
+# Fit the model
+kf.fit(X_dev1, y_dev1)
+
+# Get the best parameters and best score
+best_params = kf.best_params_
+best_score = kf.best_score_
+
+print(f'Best Parameters: {best_params}')
+print(f'Best Cross-Validation Accuracy: {best_score}')
+#%%
+# Train the best model on the full training set
+best_tree = DecisionTreeClassifier(**best_params)
+best_tree.fit(X_dev1, y_dev1)
+
+# Visualize the tree using matplotlib
+plt.figure(figsize=(20, 10))
+plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=5)
 plt.show()
 
+#%%
+#test en los holdout
+heldout_predictions = best_tree.predict(X_eval1)
+sum(heldout_predictions == y_eval1)
 
-plt.figure(figsize=(20,10))
-# Plot the accuracies for each depth
-plt.plot(max_depths, accuracies, marker='o')
-plt.xlabel('Tree Depth')
-plt.ylabel('Accuracy')
-plt.title('Decision Tree Depth vs Accuracy')
+cm = confusion_matrix(y_eval1, heldout_predictions, labels=y_eval1.unique())
+
+# Display the confusion matrix
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=y_eval1.unique())
+disp.plot(cmap=plt.cm.Blues)
+plt.title('Confusion Matrix for Vowels Classification')
 plt.show()
 
+accuracy = accuracy_score(y_eval1, heldout_predictions)
+precision = precision_score(y_eval1, heldout_predictions, labels=y_eval1.unique(), average='macro')
+recall = recall_score(y_eval1, heldout_predictions, labels=y_eval1.unique(), average='macro')
+f1 = f1_score(y_eval1, heldout_predictions, labels=y_eval1.unique(), average='macro')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+print(f"Accuracy: {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1 Score: {f1:.4f}")
