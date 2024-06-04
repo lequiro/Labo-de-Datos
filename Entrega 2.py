@@ -1,7 +1,8 @@
 """
-Trabajo Práctico 01
+Trabajo Práctico 02
 Materia: Laboratorio de datos - FCEyN - UBA
 Integrantes: Otermín Juana, Quispe Rojas Luis Enrique , Vilcovsky Maia
+
 
 Fecha  : 2024-06-04
 """
@@ -11,7 +12,7 @@ import matplotlib.pyplot as plt
 import os
 import seaborn as sns
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.tree import DecisionTreeClassifier, plot_tree,export_text
 from sklearn.neighbors import KNeighborsClassifier
 from scipy.spatial.distance import cdist
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay,accuracy_score, precision_score, recall_score, f1_score
@@ -21,9 +22,10 @@ from scipy.spatial.distance import euclidean
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt5')
 
-path= r'C:\Users\Luis Quispe\Desktop\Labo_Datos\TP02\Archivos TP-02-20240527'
+path = input("Coloque la ruta de acceso a sus archivos: ")
 os.chdir(path)
 #%%
+#importa el dataframe del conjunto de datos MNIST
 data = pd.read_csv("emnist_letters_tp.csv", header= None)
 #%%
 #FUNCIONES
@@ -44,27 +46,37 @@ def crear_arbol(profundidad, X, Y):
     clf_info = clf_info.fit(X, Y)
     return clf_info
 
+def desviacion_promedio(letra):
+    letra_seleccionada = np.array(data1[data1[0] == letra].loc[:,1:],dtype=float)
+    letra_seleccionada_promedio= np.mean(letra_seleccionada, axis=0)
+    difference = letra_seleccionada - letra_seleccionada_promedio
+    estandar_vec = np.std(difference,axis=1)
+    estandar_vec_mean = estandar_vec.mean()
+    return estandar_vec_mean
+
 #%%
 #esta parte rota y flipea todas las letras en el data frame
-labels = data.iloc[:, 0].values
-images = data.iloc[:, 1:].values
+labels = data.iloc[:, 0].values #se queda con las letras correspondientes a cada fila
+images = data.iloc[:, 1:].values #se queda con el resto del dataframe correspondientes a los valores por pixel
 
-transformed_images = np.array([flip_rotate(image) for image in images])
+transformed_images = np.array([flip_rotate(image) for image in images]) #aplica a cada fila la función flip_rotate
 flattened_images = transformed_images.reshape(transformed_images.shape[0], -1)
 data1 = pd.DataFrame(np.column_stack((labels, flattened_images)))
 
 #cuento cantidad de letras
-cantidad_letras = data1[0].value_counts()
+cantidad_letras = data1[0].value_counts() #cuenta la cantidad de imagenes por letra
 #%%
+#PTO 1A
+#Calcula la imagen promedio de todas las letras
 matriz_valores = np.array(data1.drop(0, axis=1).astype(float))
 vec_promedio = np.mean(matriz_valores, axis=0)
 image_vec_promedio = vec_promedio.reshape(28, 28)
 
-plt.figure(figsize=(17.28, 8.1))
+plt.figure()
 plt.imshow(image_vec_promedio)
 plt.title("Promedio de todas las letras")
 plt.show()
-#%%
+
 # Encontrar las columnas con valores promedio entre 0 y 1
 columnas_menores_1 = np.where((vec_promedio >= 0) & (vec_promedio <= 1))[0]
 
@@ -72,7 +84,7 @@ columnas_menores_1 = np.where((vec_promedio >= 0) & (vec_promedio <= 1))[0]
 imagen_vec_promedio = vec_promedio.reshape(28, 28)
 
 # Visualizar la imagen promedio con recuadros en las columnas de bajo valor
-plt.figure(figsize=(17.28, 8.1))
+plt.figure()
 plt.imshow(imagen_vec_promedio, cmap='viridis')
 plt.title("Promedio de todas las letras")
 
@@ -86,36 +98,37 @@ for col in columnas_menores_1:
 plt.show()
 
 #%%
-#PTO 1B (LETRAS)
+#PTO 1B (PRIMER ANALISIS)
+#Calcula la imagen promedio por letra
+
 letra_promedio = pd.DataFrame(flattened_images.astype(float))
 letra_promedio.insert(0, 'label', labels)
-grouped_data = letra_promedio.groupby('label').mean()
+group_por_letra = letra_promedio.groupby('label').mean()
 
 
-grid_size = int(np.ceil(np.sqrt(grouped_data.shape[0])))
-fig, axes = plt.subplots(2, int(np.ceil(grouped_data.shape[0] / 2)), figsize=(15, 8))
+grid_size = int(np.ceil(np.sqrt(group_por_letra.shape[0])))
+fig, axes = plt.subplots(2, int(np.ceil(group_por_letra.shape[0] / 2)), figsize=(15, 8))
 axes = axes.flatten()
 
 
-for i, (label, mean_image) in enumerate(grouped_data.iterrows()):
+for i, (label, mean_image) in enumerate(group_por_letra.iterrows()):
     ax = axes[i]
     mean_image = mean_image.values.reshape(28, 28)
     ax.imshow(mean_image)
     ax.set_title(f'Letra {label}')
     ax.axis('off')
 
-# Turn off any unused subplots
-for i in range(grouped_data.shape[0], len(axes)):
+for i in range(group_por_letra.shape[0], len(axes)):
     axes[i].axis('off')
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.show()
 #%%
-#PTO 1B (DISTANCIA)
+#PTO 1B (SEGUNDO ANALISIS)
 #ME DA EL HEATMAP CON LA DISTANCIA ENTRE LOS PARES DE LETRAS QUE QUIERO NORMALIZADAS
 
-selected_letters = ['L', 'I', 'M', 'N', 'E', 'F', 'O', 'Q', 'X', 'V', 'B', 'D', 'C', 'U', 'Y']
-average_images_selected = grouped_data.loc[selected_letters]
+letras_seleccionadas = ['L', 'I', 'M', 'N', 'E', 'F', 'O', 'Q', 'X', 'V', 'B', 'D', 'C', 'U', 'Y']
+average_images_selected = group_por_letra.loc[letras_seleccionadas]
 distances = cdist(average_images_selected, average_images_selected, metric='euclidean')
 
 min_distance = np.min(distances)
@@ -123,57 +136,43 @@ max_distance = np.max(distances)
 distances_normalized = (distances - min_distance) / (max_distance - min_distance)
 
 plt.figure(figsize=(17.28, 8.1))
-sns.heatmap(distances_normalized, xticklabels=selected_letters, yticklabels=selected_letters, cmap='viridis', annot=True, fmt=".2f")
+sns.heatmap(distances_normalized, xticklabels=letras_seleccionadas, yticklabels=letras_seleccionadas, cmap='viridis', annot=True, fmt=".2f")
 plt.title('Mapa de calor de las distancias normalizadas entre imágenes promedio de letras seleccionadas')
 plt.xlabel('Letra')
 plt.ylabel('Letra')
 plt.show()
 
+
 #%%
-#NUEVO PTO 1C
+#PTO 1C
+#Calculo de la desvicación estándar a la imagen promedio
 # Letras seleccionadas para el análisis
-selected_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-average_images = {}
-avg_distances = {}
+letras_seleccionadas = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+diccionario_total = {}
 
-# Calcular el promedio de las imágenes y la desviación estándar para cada letra seleccionada
-for letter in selected_letters:
-    images_letter = images[labels == letter]
-    avg_image = np.mean(images_letter, axis=0)
-    average_images[letter] = avg_image
+for i in letras_seleccionadas:
+    valor_promedio = desviacion_promedio(i)
+    diccionario_total.update({i: valor_promedio})
     
-    # Calcular las distancias de cada imagen de la letra al promedio
-    distances = [euclidean(img.flatten(), avg_image.flatten()) for img in images_letter]
-    avg_distance = np.mean(distances)
-    avg_distances[letter] = avg_distance
-
-# Encontrar la distancia mínima y máxima
-min_distance = min(avg_distances.values())
-max_distance = max(avg_distances.values())
-
-# Normalizar las distancias promedio
-normalized_distances = {letter: (distance - min_distance) / (max_distance - min_distance) for letter, distance in avg_distances.items()}
-
-# Configurar el gráfico de barras
+# Graficar el diagrama de barras
 plt.figure(figsize=(10, 6))
-bars = plt.bar(normalized_distances.keys(), normalized_distances.values(), color='skyblue')
+bars = plt.bar(diccionario_total.keys(), diccionario_total.values(), color='skyblue')
+plt.xlabel('Letra')
+plt.ylabel('Distancia promedio')
+plt.title('Distancia promedio para cada letra')
+plt.xticks(rotation=45)  # Rotar las etiquetas del eje x para mayor claridad
 
-# Añadir los valores normalizados encima de cada barra
 for bar in bars:
     height = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width() / 2.0, height, f'{height:.4f}', ha='center', va='bottom')
-    
-# Añadir una línea vertical en la distancia promedio especificada (normalizada)
-normalized_threshold = (1799 - min_distance) / (max_distance - min_distance)
-plt.axhline(y=normalized_threshold, color='r', linestyle='--', label=f'Promedio normalizado = {normalized_threshold:.4f}')
-plt.legend()
-plt.xlabel('Letras')
-plt.ylabel('Distancia Promedio Normalizada')
-plt.title('Distancia Promedio Normalizada de cada tipo de letra a su promedio')
-plt.xticks(rotation=90)
-plt.tight_layout()
-plt.show()
+    plt.annotate(f'{height:.2f}', 
+                 xy=(bar.get_x() + bar.get_width() / 2, height),
+                 xytext=(0, 3),  
+                 textcoords="offset points",
+                 ha='center', va='bottom')
 
+# Agregar una línea horizontal en el valor de la letra 'C'
+plt.axhline(y=diccionario_total['C'], color='r', linestyle='--', label='C')
+plt.legend()
 #%%
 #PUNTO 2
 data1_frame_la = data1[(data1[0] == 'L') | (data1[0] == 'A')]
@@ -187,8 +186,8 @@ la maxima distancia entre las letras A y L (promediando sus clases) para poder t
 mayor dispersion de los datos
 """
 #Busca el promedio de las clases para la letra L y la letra A
-promedios_L = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "A"].loc[:,1:], axis=0)
-promedios_A = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "L"].loc[:,1:], axis =0)
+promedios_A = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "A"].loc[:,1:], axis=0)
+promedios_L = np.mean(data1_frame_la[data1_frame_la.loc[:,0] == "L"].loc[:,1:], axis =0)
 
 #Busca la maxima distancia entre ellas
 distancia_max = np.max(np.abs(promedios_L-promedios_A))
@@ -320,6 +319,35 @@ Y_pred_caso7 = model.predict(X_test_caso7)
 score = accuracy_score(y_eval, Y_pred_caso7)
 print(f"Accuracy con 15 atributos: {score}")
 #Accuracy con 15 atributos: 0.9854166666666667
+#%%
+#Esto dibuja los pixeles seleccionados en el primer modelo para letra 'L'
+array_L = np.array(promedios_L,dtype=float).reshape(28,28)
+indices = [402, 429, 495]
+highlighted_array = np.zeros((28, 28))
+for idx in indices:
+    x, y = divmod(idx, 28)  
+    highlighted_array[x, y] = 1 
+    
+plt.figure()
+plt.imshow(array_L)
+plt.imshow(highlighted_array, cmap='pink', alpha=0.3)
+plt.show()
+
+#%%
+#Esto dibuja los pixeles seleccionados en el primer modelo para letra 'A'
+array_A = np.array(promedios_A,dtype=float).reshape(28,28)
+indices = [402, 429, 495]
+highlighted_array = np.zeros((28, 28))
+for idx in indices:
+    x, y = divmod(idx, 28)  
+    highlighted_array[x, y] = 1 
+
+plt.figure()
+plt.imshow(array_A)
+plt.imshow(highlighted_array, cmap='pink', alpha=0.3)
+plt.show()
+
+
 
 #%% Punto 2-E 
 """
@@ -382,30 +410,28 @@ print(f"Accuracy de test con 15 atributos con k=10: {accuracy_test7[4]}")
 print(f"Accuracy de test con 15 atributos con k=50: {accuracy_test7[5]}")
 
 #%%
-#PUNTO 3 
+#PUNTO 3A
+#Genera el nuevo data frame con las vocales.
+#Separamos en train y test(heldout)
 data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] == 'I') | (data1[0] == 'O') | (data1[0] == 'U')]
 X_dev1, X_eval1, y_dev1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
-max_depths = range(1, 11)
+#%%
+max_depths = range(1, 11) #profundidades a probar
 accuracies = []
 
-
-
+#crea arboles para las alturas en max_depths
 for depth in max_depths:
     clf = crear_arbol(depth, X_dev1, y_dev1)
     y_pred = clf.predict(X_eval1)
     accuracy = accuracy_score(y_eval1, y_pred)
     accuracies.append(accuracy)
 
-
-accuracy_deltas = np.diff(accuracies)
+#Nos quedamos con la profundidad del 'codo'
 elbow_depth = 5
-best_depth = elbow_depth
-best_tree = crear_arbol(best_depth, X_dev1, y_dev1)
-best_accuracy = accuracies[best_depth - 1]
+best_tree = crear_arbol(elbow_depth, X_dev1, y_dev1)
+best_accuracy = accuracies[elbow_depth - 1]
 
-print(f'Elbow Depth: {best_depth}, Accuracy at Elbow: {best_accuracy}')
-
-# Optionally, plot the accuracies to visualize the elbow point
+plt.figure()
 plt.plot(max_depths, accuracies, marker='o')
 plt.xlabel('Depth of Tree')
 plt.ylabel('Accuracy')
@@ -413,7 +439,9 @@ plt.title('Accuracy vs Depth of Decision Tree')
 plt.axvline(x=elbow_depth, color='r', linestyle='--')
 plt.show()
 #%%
-# Visualizing the best tree
+#PUNTO 3C
+#Prueba distintos hiperparámetros dejando constante la profundidad
+# (cv= numero) = cantidad de particiones por k-folding
 feature_names = X_dev1.columns.tolist()
 class_names = y_dev1.unique().tolist()
 param_grid = {
@@ -422,26 +450,30 @@ param_grid = {
 }
 
 kf = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=10, scoring='accuracy')
-
-# Fit the model
 kf.fit(X_dev1, y_dev1)
 
-# Get the best parameters and best score
+# Tome los mejores parametros
 best_params = kf.best_params_
 best_score = kf.best_score_
 
-print(f'Best Parameters: {best_params}')
-print(f'Best Cross-Validation Accuracy: {best_score}')
+print(f'Mejores parámetros: {best_params}')
+print(f'Accuracy : {best_score}')
 #%%
-# Train the best model on the full training set
+#Genera una visualización del mejor árbol de decisión según lo probado
 best_tree = DecisionTreeClassifier(**best_params)
 best_tree.fit(X_dev1, y_dev1)
-
-# Visualize the tree using matplotlib
 plt.figure(figsize=(20, 10))
-plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=5)
+plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
+# plt.savefig('..\imagenes\decision_tree.svg', format='svg')
 plt.show()
-
+#%%
+#Genera una visualización del mejor árbol de decisión según lo probado
+best_tree = DecisionTreeClassifier(**best_params)
+best_tree.fit(X_dev1, y_dev1)
+plt.figure(figsize=(20, 10))
+plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
+plt.savefig('..\imagenes\decision_tree.svg', format='svg')
+plt.show()
 #%%
 #test en los holdout
 heldout_predictions = best_tree.predict(X_eval1)
@@ -449,10 +481,10 @@ sum(heldout_predictions == y_eval1)
 
 cm = confusion_matrix(y_eval1, heldout_predictions, labels=y_eval1.unique())
 
-# Display the confusion matrix
+# Grafica la Matriz de Confusión
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=y_eval1.unique())
 disp.plot(cmap=plt.cm.Blues)
-plt.title('Confusion Matrix for Vowels Classification')
+plt.title('Matriz de Confusión')
 plt.show()
 
 accuracy = accuracy_score(y_eval1, heldout_predictions)
