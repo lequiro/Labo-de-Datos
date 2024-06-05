@@ -158,8 +158,8 @@ for i in letras_seleccionadas:
 plt.figure(figsize=(10, 6))
 bars = plt.bar(diccionario_total.keys(), diccionario_total.values(), color='skyblue')
 plt.xlabel('Letra')
-plt.ylabel('Distancia promedio')
-plt.title('Distancia promedio para cada letra')
+plt.ylabel('Desvicación estándar promedio')
+plt.title('Desvicación estándar promedio para cada letra')
 plt.xticks(rotation=45)  # Rotar las etiquetas del eje x para mayor claridad
 
 for bar in bars:
