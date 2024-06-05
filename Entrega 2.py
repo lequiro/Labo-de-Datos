@@ -3,6 +3,11 @@ Trabajo Práctico 02
 Materia: Laboratorio de datos - FCEyN - UBA
 Integrantes: Otermín Juana, Quispe Rojas Luis Enrique , Vilcovsky Maia
 
+Este código se ocupa principalmente de realizar análisis de imágenes de letras utilizando
+técnicas de manipulación de datos, análisis estadístico, visualización y algoritmos de 
+machine learning. El contenido del archivo "emnist_letters_tp.csv" contiene imágenes de 
+letras, donde cada fila representa una imagen de 28x28 píxeles y una etiqueta 
+correspondiente a la letra representada.
 
 Fecha  : 2024-06-04
 """
