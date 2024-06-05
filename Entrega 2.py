@@ -432,9 +432,9 @@ best_accuracy = accuracies[elbow_depth - 1]
 
 plt.figure()
 plt.plot(max_depths, accuracies, marker='o')
-plt.xlabel('Depth of Tree')
+plt.xlabel('Profundidad del árbol')
 plt.ylabel('Accuracy')
-plt.title('Accuracy vs Depth of Decision Tree')
+plt.title('Accuracy vs Profundidad')
 plt.axvline(x=elbow_depth, color='r', linestyle='--')
 plt.show()
 #%%
@@ -463,15 +463,12 @@ best_tree = DecisionTreeClassifier(**best_params)
 best_tree.fit(X_dev1, y_dev1)
 plt.figure(figsize=(20, 10))
 plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
-plt.savefig('..\imagenes\decision_tree.svg', format='svg')
 plt.show()
 #%%
-
 tree_text = export_text(best_tree, feature_names=list(X_dev1.columns))
 output_file = "decision_tree.txt"
 with open(output_file, "w") as f:
-    f.write(tree_text)
-    
+    f.write(tree_text) 
 #%%
 #test en los holdout
 heldout_predictions = best_tree.predict(X_eval1)
