@@ -22,7 +22,7 @@ from scipy.spatial.distance import euclidean
 from IPython import get_ipython
 get_ipython().run_line_magic('matplotlib', 'qt5')
 
-path = input("Coloque la ruta de acceso a sus archivos: ")
+path = input("Coloque la ruta de acceso a su archivo csv: ")
 os.chdir(path)
 #%%
 #importa el dataframe del conjunto de datos MNIST
