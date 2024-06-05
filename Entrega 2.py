@@ -320,23 +320,9 @@ score = accuracy_score(y_eval, Y_pred_caso7)
 print(f"Accuracy con 15 atributos: {score}")
 #Accuracy con 15 atributos: 0.9854166666666667
 #%%
-
-array_L = np.array(promedios_L,dtype=float).reshape(28,28)
-
-#Esto dibuja los pixeles seleccionados en el primer modelo para letra 'A'
-array_A = np.array(promedios_A,dtype=float).reshape(28,28)
-indices = [402, 429, 495]
-highlighted_array = np.zeros((28, 28))
-for idx in indices:
-    x, y = divmod(idx, 28)  
-    highlighted_array[x, y] = 1 
-
-plt.figure()
-plt.imshow(array_A)
-plt.imshow(highlighted_array, cmap='pink', alpha=0.3)
-plt.show()
-#%%
 #Esto dibuja los pixeles seleccionados en el primer modelo para las letras 'L' y 'A'
+array_L = np.array(promedios_L,dtype=float).reshape(28,28)
+array_A = np.array(promedios_A,dtype=float).reshape(28,28)
 # Definir los índices para resaltar
 indices = [402, 429, 495]
 
