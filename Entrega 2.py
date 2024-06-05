@@ -496,3 +496,36 @@ print(f"Accuracy: {accuracy:.4f}")
 print(f"Precision: {precision:.4f}")
 print(f"Recall: {recall:.4f}")
 print(f"F1 Score: {f1:.4f}")
+
+#%%
+data1_frame_oi = data1[(data1[0] == 'O') | (data1[0] == 'I')]
+promedios_O = np.mean(data1_frame_oi[data1_frame_oi.loc[:,0] == "O"].loc[:,1:], axis=0)
+promedios_I = np.mean(data1_frame_oi[data1_frame_oi.loc[:,0] == "I"].loc[:,1:], axis =0)
+#Esto dibuja los pixeles seleccionados en el primer modelo para las letras 'L' y 'A'
+array_O= np.array(promedios_O,dtype=float).reshape(28,28)
+array_I = np.array(promedios_I,dtype=float).reshape(28,28)
+# Definir los índices para resaltar
+indices_I = [469,628,403,544,678]
+indices_O = [469,628,403,544]
+fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+
+# Gráfico para la letra 'L'
+array_resaltado_O = np.zeros((28, 28))
+for idx in indices_O:
+    x, y = divmod(idx, 28)  
+    array_resaltado_O[x, y] = 1
+
+axs[0].imshow(array_O)
+axs[0].imshow(array_resaltado_O, cmap='pink', alpha=0.3)
+axs[0].set_title('Letra O')
+
+# Gráfico para la letra 'A'
+array_resaltado_I = np.zeros((28, 28))
+for idx in indices_I:
+    x, y = divmod(idx, 28)  
+    array_resaltado_I[x, y] = 1 
+
+axs[1].imshow(array_I)
+axs[1].imshow(array_resaltado_I, cmap='pink', alpha=0.3)
+axs[1].set_title('Letra I')
+plt.show()
