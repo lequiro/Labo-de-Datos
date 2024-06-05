@@ -320,20 +320,9 @@ score = accuracy_score(y_eval, Y_pred_caso7)
 print(f"Accuracy con 15 atributos: {score}")
 #Accuracy con 15 atributos: 0.9854166666666667
 #%%
-#Esto dibuja los pixeles seleccionados en el primer modelo para letra 'L'
-array_L = np.array(promedios_L,dtype=float).reshape(28,28)
-indices = [402, 429, 495]
-highlighted_array = np.zeros((28, 28))
-for idx in indices:
-    x, y = divmod(idx, 28)  
-    highlighted_array[x, y] = 1 
-    
-plt.figure()
-plt.imshow(array_L)
-plt.imshow(highlighted_array, cmap='pink', alpha=0.3)
-plt.show()
 
-#%%
+array_L = np.array(promedios_L,dtype=float).reshape(28,28)
+
 #Esto dibuja los pixeles seleccionados en el primer modelo para letra 'A'
 array_A = np.array(promedios_A,dtype=float).reshape(28,28)
 indices = [402, 429, 495]
@@ -346,9 +335,33 @@ plt.figure()
 plt.imshow(array_A)
 plt.imshow(highlighted_array, cmap='pink', alpha=0.3)
 plt.show()
+#%%
+#Esto dibuja los pixeles seleccionados en el primer modelo para las letras 'L' y 'A'
+# Definir los índices para resaltar
+indices = [402, 429, 495]
 
+fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
+# Gráfico para la letra 'L'
+array_resaltado_L = np.zeros((28, 28))
+for idx in indices:
+    x, y = divmod(idx, 28)  
+    array_resaltado_L[x, y] = 1
 
+axs[0].imshow(array_L)
+axs[0].imshow(array_resaltado_L, cmap='pink', alpha=0.3)
+axs[0].set_title('Letra L')
+
+# Gráfico para la letra 'A'
+array_resaltado_A = np.zeros((28, 28))
+for idx in indices:
+    x, y = divmod(idx, 28)  
+    array_resaltado_A[x, y] = 1 
+
+axs[1].imshow(array_A)
+axs[1].imshow(array_resaltado_A, cmap='pink', alpha=0.3)
+axs[1].set_title('Letra A')
+plt.show()
 #%% Punto 2-E 
 """
 Voy a comparar el ultimo modelo que tiene 15 atributos de distancia maxima en promedio entre L y A
@@ -464,16 +477,15 @@ best_tree = DecisionTreeClassifier(**best_params)
 best_tree.fit(X_dev1, y_dev1)
 plt.figure(figsize=(20, 10))
 plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
-# plt.savefig('..\imagenes\decision_tree.svg', format='svg')
-plt.show()
-#%%
-#Genera una visualización del mejor árbol de decisión según lo probado
-best_tree = DecisionTreeClassifier(**best_params)
-best_tree.fit(X_dev1, y_dev1)
-plt.figure(figsize=(20, 10))
-plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
 plt.savefig('..\imagenes\decision_tree.svg', format='svg')
 plt.show()
+#%%
+
+tree_text = export_text(best_tree, feature_names=list(X_dev1.columns))
+output_file = "decision_tree.txt"
+with open(output_file, "w") as f:
+    f.write(tree_text)
+    
 #%%
 #test en los holdout
 heldout_predictions = best_tree.predict(X_eval1)
