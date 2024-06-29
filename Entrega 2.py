@@ -418,43 +418,21 @@ print(f"Accuracy de test con 15 atributos con k=50: {accuracy_test7[5]}")
 #Genera el nuevo data frame con las vocales.
 #Separamos en train y test(heldout)
 data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] == 'I') | (data1[0] == 'O') | (data1[0] == 'U')]
-X_dev1, X_eval1, y_dev1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
+X_train1, X_eval1, y_train1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
+
 #%%
-max_depths = range(1, 11) #profundidades a probar
-accuracies = []
+#PUNTO 3B y 3C
+# Ajusto el arbol de decision variando las alturas y los distintis hiperparametros.
 
-#crea arboles para las alturas en max_depths
-for depth in max_depths:
-    clf = crear_arbol(depth, X_dev1, y_dev1)
-    y_pred = clf.predict(X_eval1)
-    accuracy = accuracy_score(y_eval1, y_pred)
-    accuracies.append(accuracy)
-
-#Nos quedamos con la profundidad del 'codo'
-elbow_depth = 5
-best_tree = crear_arbol(elbow_depth, X_dev1, y_dev1)
-best_accuracy = accuracies[elbow_depth - 1]
-
-plt.figure()
-plt.plot(max_depths, accuracies, marker='o')
-plt.xlabel('Profundidad del árbol')
-plt.ylabel('Accuracy')
-plt.title('Accuracy vs Profundidad')
-plt.axvline(x=elbow_depth, color='r', linestyle='--')
-plt.show()
-#%%
-#PUNTO 3C
-#Prueba distintos hiperparámetros dejando constante la profundidad
-# (cv= numero) = cantidad de particiones por k-folding
-feature_names = X_dev1.columns.tolist()
-class_names = y_dev1.unique().tolist()
 param_grid = {
-    'max_depth': [5],
+    'max_depth': range(1, 11),
     'criterion': ['gini', 'entropy']
 }
-
+#Entreno y evaluo haciendo cross validacion sobre los datos del train
 kf = GridSearchCV(DecisionTreeClassifier(), param_grid, cv=10, scoring='accuracy')
-kf.fit(X_dev1, y_dev1)
+kf.fit(X_train1, y_train1)
+
+results = kf.cv_results_
 
 # Tome los mejores parametros
 best_params = kf.best_params_
@@ -462,29 +440,40 @@ best_score = kf.best_score_
 
 print(f'Mejores parámetros: {best_params}')
 print(f'Accuracy : {best_score}')
-#%%
-#Genera una visualización del mejor árbol de decisión según lo probado
-best_tree = DecisionTreeClassifier(**best_params)
-best_tree.fit(X_dev1, y_dev1)
-plt.figure(figsize=(20, 10))
-plot_tree(best_tree, feature_names=X_dev1.columns, class_names=y_dev1.unique().astype(str), filled=True, rounded=True, fontsize=2)
+#Se realiza el grafico para visualizar el codo
+plt.figure()
+plt.plot(range(1,11), results["mean_test_score"][0:10], marker='o', label = "Gini" )
+plt.plot(range(1,11), results["mean_test_score"][10:20], marker='o', label = "Entropia" )
+plt.xlabel('Profundidad del árbol')
+plt.ylabel('Accuracy')
+plt.title('Accuracy vs Profundidad')
+plt.legend()
 plt.show()
-#%%
-tree_text = export_text(best_tree, feature_names=list(X_dev1.columns))
+
+#Genera una visualización del mejor árbol de decisión elijiendo como profundidad 5 y como hiperparametro entropia
+best_params = {"criterion": "entropy", "max_depth": 4 }
+best_tree = DecisionTreeClassifier(**best_params)
+best_tree.fit(X_train1, y_train1)
+plt.figure(figsize=(20, 10))
+plot_tree(best_tree, feature_names=X_train1.columns, class_names=y_train1.unique().astype(str), filled=True, rounded=True, fontsize=2)
+plt.show()
+#%% 
+#Importo el tree como txt para mejor visualizacion
+tree_text = export_text(best_tree, feature_names=list(X_train1.columns))
 output_file = "decision_tree.txt"
 with open(output_file, "w") as f:
     f.write(tree_text) 
 #%%
-#test en los holdout
+#Evaluo en el held out 
 heldout_predictions = best_tree.predict(X_eval1)
 sum(heldout_predictions == y_eval1)
 
 cm = confusion_matrix(y_eval1, heldout_predictions, labels=y_eval1.unique())
 
-# Grafica la Matriz de Confusión
+# Grafica la Matriz de Confusión sobre el held out
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=y_eval1.unique())
 disp.plot(cmap=plt.cm.Blues)
-plt.title('Matriz de Confusión')
+plt.title('Matriz de Confusión sobre la evaluación en el held out')
 plt.show()
 
 accuracy = accuracy_score(y_eval1, heldout_predictions)
@@ -496,6 +485,7 @@ print(f"Accuracy: {accuracy:.4f}")
 print(f"Precision: {precision:.4f}")
 print(f"Recall: {recall:.4f}")
 print(f"F1 Score: {f1:.4f}")
+
 
 #%%
 data1_frame_oi = data1[(data1[0] == 'O') | (data1[0] == 'I')]
