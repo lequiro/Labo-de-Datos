@@ -446,7 +446,7 @@ plt.plot(range(1,11), results["mean_test_score"][0:10], marker='o', label = "Gin
 plt.plot(range(1,11), results["mean_test_score"][10:20], marker='o', label = "Entropia" )
 plt.xlabel('Profundidad del árbol')
 plt.ylabel('Accuracy')
-plt.title('Accuracy vs Profundidad')
+plt.title('Accuracy vs Profundidad sobre los datos de entrenamiento')
 plt.legend()
 plt.show()
 
