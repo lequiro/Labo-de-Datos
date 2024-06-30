@@ -1,8 +1,16 @@
+"""
+Trabajo Práctico 01
+Materia: Laboratorio de datos - FCEyN - UBA
+Integrantes: Otermín Juana, Quispe Rojas Luis Enrique , Vilcovsky Maia
+Este codigo contiene funciones, aplicaciones en Pandas, consultas en SQL y visualizacion de datos a partir de graficos.
+
+Fecha  : 2024-05-12
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-import seaborn as sns   
+import seaborn as sns  
 from inline_sql import sql, sql_val
 #%%
 #Esto te abre los gráficos en una ventana aparte (CORRERLO ES OPCIONAL)
@@ -50,15 +58,11 @@ def process_redes_sociales(lista,posicion, patrones, asignaciones):
 
     return lista_sedes_datos_temp
 #%%
-#CARGO LOS DATOS
-entradas = os.listdir(script_directory)
-
 flujos = pd.read_csv(entradas[0])
 lista_secciones= pd.read_csv(entradas[1])
 lista_sedes_datos = pd.read_csv(entradas[2], on_bad_lines= 'skip')
 lista_sedes = pd.read_csv(entradas[3])
 paises = pd.read_csv(entradas[4])
-
 #%%
 '''
 SECCION PAISES/SECCIONES/REGIONES
@@ -78,6 +82,13 @@ SECCIONES = SECCIONES.rename(columns = {'sede_desc_castellano':'descripcion'})
 REGION = lista_sedes_datos[['pais_iso_3', 'region_geografica' ]]
 REGION = REGION.rename(columns = {'pais_iso_3' : 'iso3'})
 REGION = REGION.drop_duplicates()
+
+
+
+#####################################PUNTO F(GQM)#########################################
+proporcion_not_cellphone = lista_secciones['telefono_principal'].isna().sum() / len(lista_secciones['telefono_principal']) * 100
+##########################################################################################
+
 #%%
 '''
 SECCION FLUJOS MONETARIOS
@@ -184,7 +195,18 @@ REDES_SOCIALES = pd.concat([lista_sedes_datos_1,
                             lista_sedes_datos_4],
                             ignore_index=True)
 REDES_SOCIALES = REDES_SOCIALES.rename(columns = {'redes_sociales': 'contacto'})
+
+#####################################PUNTO F(GQM)#########################################
+proporcion_not_URL = ((~REDES_SOCIALES['contacto'].str.contains('.com')).sum() /len(REDES_SOCIALES)) *100
+##########################################################################################
+
+
 #%%
+#####################################PUNTO F(GQM)#########################################
+proporcion_sede_inactivas = sum(lista_sedes['estado'] == 'Inactivo')/len(lista_sedes) * 100
+##########################################################################################
+
+
 '''
 SECCION SEDES: Genera un dataframe a partir de lista_sedes conteniendo los datos esquematizados en el DER
 para la entidad SEDES
@@ -210,7 +232,6 @@ Para cada país informar cantidad de sedes, cantidad de secciones en promedio qu
 sus sedes y el flujo monetario neto de Inversión Extranjera Directa (IED) del país en 
 el año 2022. El orden del reporte debe respetar la cantidad de sedes (de manera 
 descendente). En caso de empate, ordenar alfabéticamente por nombre de país
-
 """
 #Cuento cantidad de sedes por pais
 consulta = """
@@ -274,7 +295,7 @@ tablaIED2022 = sql^consulta
 
 #Uno este resultado con los resultados anteriores de cant de sedes por pais y secciones por sede y ordeno 
 consulta = """
-    SELECT tc.cantidad_sedes AS sedes, tc.nombre AS pais, ti."IED 2022 (M U$S)", tc.promedio_secciones AS seccion
+    SELECT tc.nombre AS pais, tc.cantidad_sedes AS sedes, tc.promedio_secciones AS "secciones promedio", ti."IED 2022 (M U$S)"
     FROM tablaCantidadSedesYSeccionesPorPais as tc
     LEFT JOIN tablaIED2022 as ti
     ON tc.iso3 = ti.iso3
@@ -298,7 +319,7 @@ GROUP BY iso3;
 paises_con_sedes_argentinas = sql^ consulta
 
 
-#cambia el pais por region
+#A cada páis le asigna una región
 consulta = '''
 SELECT region_geografica, "paises con sedes argentinas"
 FROM paises_con_sedes_argentinas
@@ -307,13 +328,13 @@ JOIN REGION ON paises_con_sedes_argentinas.iso3 = REGION.iso3;
 tabla_region_geografica_cantidad_sedes = sql^ consulta
 
 
-# Cuenta la cantidad de sedes argentina en cada región 
+# Cuenta la cantidad de paises con sedes argentinas por región
 consulta ='''
-SELECT t.region_geografica, SUM("paises con sedes argentinas") AS "paises con sedes argentinas"
+SELECT t.region_geografica AS "Región geográfica", COUNT(t.region_geografica) AS "Países Con Sedes Argentinas"
 FROM tabla_region_geografica_cantidad_sedes AS t
 GROUP BY t.region_geografica;
 '''
-cantidad_sedes_region = sql^consulta
+cantidad_paises_region = sql^consulta
 
 
 #se queda con los flujos del 2022 
@@ -341,11 +362,11 @@ GROUP BY region_geografica;
 '''
 flujo_promedio_region = sql^ consulta
 
-#Hace un natural join entre flujo_promedio_region  y cantidad_sedes_region
+#Hace un natural join entre flujo_promedio_region  y cantidad_paises_region
 consulta = '''
-SELECT t.region_geografica, t."paises con sedes argentinas", f.promedio AS "Promedio IED 2022 (M U$S)"
-FROM cantidad_sedes_region AS t
-JOIN flujo_promedio_region AS f ON t.region_geografica = f.region_geografica
+SELECT t."Región geográfica", t."Países Con Sedes Argentinas", f.promedio AS "Promedio IED 2022 (M U$S)"
+FROM cantidad_paises_region AS t
+JOIN flujo_promedio_region AS f ON t."Región geográfica" = f.region_geografica
 ORDER BY f.promedio DESC;
 '''
 tablaResultado2 = sql^consulta
@@ -423,12 +444,22 @@ tablaResultado4 = sql^consulta
 i) 
 Cantidad de sedes por región geográfica. Mostrarlos ordenados de manera decreciente por dicha cantidad.
 '''
+
+tabla_sedes = tabla_region_geografica_cantidad_sedes.groupby('region_geografica').sum().reset_index()
     
-tablaResultado2_sorted = tablaResultado2.sort_values('paises con sedes argentinas', ascending=False)
+
+unique_regions = tabla_sedes['region_geografica'].unique()
+palette = sns.color_palette('coolwarm', len(unique_regions))
+color_mapping = dict(zip(unique_regions, palette))
+
+tabla_sedes_sorted = tabla_sedes.sort_values('paises con sedes argentinas', ascending=False)
+
 sns.set(style="whitegrid")
 plt.figure(figsize=(12, 8))
 
-ax = sns.barplot(x='region_geografica', y='paises con sedes argentinas', data=tablaResultado2_sorted, palette='cool') # Gráfico de barras con Seaborn
+ax = sns.barplot(x='region_geografica', y='paises con sedes argentinas', data=tabla_sedes_sorted, palette=color_mapping) # Gráfico de barras con Seaborn
+
+
 
 for p in ax.patches:
     ax.annotate(format(p.get_height(), '.0f'), 
@@ -437,16 +468,11 @@ for p in ax.patches:
                 xytext = (0, 9), 
                 textcoords = 'offset points')
 
-
 ax.set_xlabel('Región', fontsize=14, fontweight='bold')
 ax.set_ylabel('Cantidad de Sedes', fontsize=14, fontweight='bold')
 ax.set_title('Cantidad de Sedes vs Regiones', fontsize=16, fontweight='bold')
 plt.xticks(rotation=45, ha='right', fontsize=12)  
-
-
 plt.tight_layout()
-
-
 plt.show()
 #%%
 '''
@@ -460,6 +486,8 @@ promedio_2018_2022 = FLUJOS_MONETARIOS.groupby('iso3')['monto'].mean().reset_ind
 
 promedio_region = pd.merge(promedio_2018_2022, REGION, on='iso3') # Natural join promedio_2018_2022 con REGION
 
+promedio_region = promedio_region[promedio_region['monto'] > 0] # Filtrar valores negativos y ceros
+
 ordenado = promedio_region.groupby('region_geografica')['monto'].median().sort_values(ascending=False).index
 
 sns.set(style="whitegrid")
@@ -467,18 +495,23 @@ sns.set(style="whitegrid")
 
 plt.figure(figsize=(14, 8))
 
-# Crear el boxplot 
-ax = sns.boxplot(x='region_geografica', y='monto', data=promedio_region, order= ordenado, palette='coolwarm', showfliers=True)
+
+ax = sns.boxplot(x='region_geografica', y='monto', data=promedio_region, order=ordenado, palette=color_mapping, showfliers=True)
 ax.set_yscale('log')  # escala logarítmica para mejorar la visualización. NOTA: los valores negativos no aparecerán en el gráfico
+
+ticks = [10**i for i in range(-5, 7)]  # from 10^-5 to 10^6
+ax.set_yticks(ticks)
+
+
+ax.get_yaxis().set_major_formatter(plt.FuncFormatter(lambda y, _: f'$10^{{{int(np.log10(y))}}}$'))
 
 ax.set_xlabel('Región Geográfica', fontsize=12, fontweight='bold')
 ax.set_ylabel('Flujo Promedio (2018-2022) [log scale]', fontsize=12, fontweight='bold')
 ax.set_title('Distribución de Flujos Promedio por Región Geográfica', fontsize=14, fontweight='bold')
 
-plt.xticks(rotation=45, ha='right')
-
+plt.xticks(rotation=45, ha='right', fontsize=12)
 sns.despine(trim=True, left=True)
-
+plt.ylim((1e1, 1e6))
 plt.tight_layout()
 plt.show()
 #%%
@@ -514,21 +547,23 @@ sns.despine(trim=True, left=True)
 
 plt.tight_layout()
 plt.show()
+
+
 #%%
-path = r'C:\Users\Luis Quispe\Desktop\TP01-MLJ\TablasLimpias'
-os.chdir(path)
+# path = r'C:\Users\Luis Quispe\Desktop\TP01-MLJ\TablasLimpias'
+# os.chdir(path)
 
-SEDES.to_csv('sedes.csv', index=False)
-REDES_SOCIALES.to_csv('redes_sociales.csv', index=False)
-FLUJOS_MONETARIOS.to_csv('flujos_monetarios.csv', index=False)
-SECCIONES.to_csv('secciones.csv', index=False)
-PAISES.to_csv('paises.csv', index=False)
-REGION.to_csv('region.csv', index=False)
+# SEDES.to_csv('sedes.csv', index=False)
+# REDES_SOCIALES.to_csv('redes_sociales.csv', index=False)
+# FLUJOS_MONETARIOS.to_csv('flujos_monetarios.csv', index=False)
+# SECCIONES.to_csv('secciones.csv', index=False)
+# PAISES.to_csv('paises.csv', index=False)
+# REGION.to_csv('region.csv', index=False)
 
-tablaResultado1.to_csv(r'.\Anexo\consulta_1.csv',index = False)
-tablaResultado2.to_csv(r'.\Anexo\consulta_2.csv',index = False)
-tablaResultado3.to_csv(r'.\Anexo\consulta_3.csv',index = False)
-tablaResultado4.to_csv(r'.\Anexo\consulta_4.csv',index = False)
+# tablaResultado1.to_csv(r'.\Anexo\consulta_1.csv',index = False)
+# tablaResultado2.to_csv(r'.\Anexo\consulta_2.csv',index = False)
+# tablaResultado3.to_csv(r'.\Anexo\consulta_3.csv',index = False)
+# tablaResultado4.to_csv(r'.\Anexo\consulta_4.csv',index = False)
 
-first_rows = tablaResultado1.head(13)
-first_rows.to_csv('first_rows.csv', index=False)
+# first_rows = tablaResultado1.head(13)
+# first_rows.to_csv('first_rows.csv', index=False)
