@@ -419,7 +419,6 @@ print(f"Accuracy de test con 15 atributos con k=50: {accuracy_test7[5]}")
 #Separamos en train y test(heldout)
 data1_frame_vocales = data1[ (data1[0] == 'A') | (data1[0] == 'E') | (data1[0] == 'I') | (data1[0] == 'O') | (data1[0] == 'U')]
 X_train1, X_eval1, y_train1, y_eval1 = train_test_split(data1_frame_vocales.drop(0, axis =1),data1_frame_vocales[0],random_state=1,test_size=0.2)
-
 #%%
 #PUNTO 3B y 3C
 # Ajusto el arbol de decision variando las alturas y los distintis hiperparametros.
@@ -455,14 +454,9 @@ best_params = {"criterion": "entropy", "max_depth": 4 }
 best_tree = DecisionTreeClassifier(**best_params)
 best_tree.fit(X_train1, y_train1)
 plt.figure(figsize=(20, 10))
-plot_tree(best_tree, feature_names=X_train1.columns, class_names=y_train1.unique().astype(str), filled=True, rounded=True, fontsize=2)
+plot_tree(best_tree, feature_names=X_train1.columns, class_names=y_train1.unique().astype(str), filled=True, rounded=True, fontsize=5)
+plt.savefig('decision_tree.svg', format='svg')
 plt.show()
-#%% 
-#Importo el tree como txt para mejor visualizacion
-tree_text = export_text(best_tree, feature_names=list(X_train1.columns))
-output_file = "decision_tree.txt"
-with open(output_file, "w") as f:
-    f.write(tree_text) 
 #%%
 #Evaluo en el held out 
 heldout_predictions = best_tree.predict(X_eval1)
@@ -495,8 +489,8 @@ promedios_I = np.mean(data1_frame_oi[data1_frame_oi.loc[:,0] == "I"].loc[:,1:], 
 array_O= np.array(promedios_O,dtype=float).reshape(28,28)
 array_I = np.array(promedios_I,dtype=float).reshape(28,28)
 # Definir los índices para resaltar
-indices_I = [469,628,403,544,678]
-indices_O = [469,628,403,544]
+indices_I = [469,628,403,544]
+indices_O = [469,628,403,370]
 fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
 # Gráfico para la letra 'L'

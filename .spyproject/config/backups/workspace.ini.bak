@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['Entrega 2.py', '..\\..\\..\\Desktop\\Labo_Datos\\TP01-MLJ\\entrega_final.py']
+recent_files = ['Entrega 2.py', '..\\..\\..\\Downloads\\TP02-MLJ\\sign_MLJ.py']
 
 [main]
 version = 0.2.0
